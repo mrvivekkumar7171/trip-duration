@@ -1,0 +1,6 @@
+[core]
+    autostage = true
+    remote = gcs-remote
+['remote "gcs-remote"']
+    url = gs://trip-duration-dvc-storages/dvc_store
+    jobs = 8
