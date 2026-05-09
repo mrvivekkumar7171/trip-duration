@@ -142,3 +142,15 @@ jobs:
         run: |
             IMAGE_URI=$REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:latest
             docker run -d -p 8080:8080 --ipc="host" --name=$IMAGE_NAME $IMAGE_URI
+
+      - name: Cleanup Workspace and Docker
+        if: always() # This ensures the cleanup runs even if previous steps fail
+        run: |
+          echo "Cleaning up untagged/dangling docker images left behind after pulling the new one"
+          docker image prune -f
+          
+          echo "Cleaning up unused docker resources (containers, networks, images) that have been dangling for more than 24 hours"
+          docker system prune -af --volumes --filter "until=24h" && find /home/mrvivekkumar7171/actions-runner/_diag/ -name "*.log" -type f -mtime +3 -delete
+          
+          echo "Cleaning up runner workspace (_work directory) to save disk space"
+          rm -rf ${{ github.workspace }}/*
