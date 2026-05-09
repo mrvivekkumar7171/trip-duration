@@ -1,6 +1,5 @@
 from google.cloud import storage
 from google.auth.exceptions import DefaultCredentialsError
-import shutil
 
 def upload_to_gcs(local_file_path, bucket_name, gcs_file_path):
     try:
@@ -30,4 +29,3 @@ gcs_bucket_name = 'trip-duration-dvc-storages'
 gcs_file_path = 'models/model.joblib'
 
 upload_to_gcs(local_model_path, gcs_bucket_name, gcs_file_path)
-shutil.copy(local_model_path, 'model.joblib')

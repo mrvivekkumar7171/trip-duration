@@ -31,6 +31,12 @@ NOTE: Make sure data related changes are tracked and commit to git and push corr
 
 Trip Duration Prediction Project with end-to-end mlops
 
+
+This project need three paid services for AWS or GCP.
+1. Storage: S3 or GCS for data and model storage remote using dvc pipeline
+2. Compute: EC2 or GCP compute engine for hosting the app and self-hosted runner for CD only
+3. Container registry: AWS ECR or GCP Artifact registry for storing the docker image of the app for CD
+
 ## Project Organization
 ------------
 
