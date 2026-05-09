@@ -1,5 +1,6 @@
-from google.cloud import storage
 from google.auth.exceptions import DefaultCredentialsError
+from google.cloud import storage
+import sys
 
 def upload_to_gcs(local_file_path, bucket_name, gcs_file_path):
     try:
@@ -24,8 +25,7 @@ def upload_to_gcs(local_file_path, bucket_name, gcs_file_path):
     except Exception as e:
         print(f"An error occurred: {e}")
 
-local_model_path = 'models/model.joblib'
-gcs_bucket_name = 'trip-duration-dvc-storages'
-gcs_file_path = 'models/model.joblib'
+model_path = sys.argv[1]
+gcs_bucket_name = sys.argv[2]
 
-upload_to_gcs(local_model_path, gcs_bucket_name, gcs_file_path)
+upload_to_gcs(model_path, gcs_bucket_name, model_path)

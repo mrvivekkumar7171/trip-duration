@@ -58,15 +58,16 @@ def feature_build(df, tag):
     do_not_use_for_training = ['id', 'pickup_datetime', 'dropoff_datetime',
                             'check_trip_duration', 'pickup_date', 'pickup_datetime_group']
     feature_names = [f for f in df.columns if f not in do_not_use_for_training]
-    # print(f'We have {len(feature_names)} features in {tag}.')
+    print(f'We have {len(feature_names)} features in {tag}.')
     return df[feature_names]
     
 
 if __name__ == '__main__':
     curr_dir = pathlib.Path(__file__)
     home_dir = curr_dir.parent.parent.parent
-    data_path = home_dir.as_posix() + '/data/raw/test.csv' 
-    
-    data = pd.read_csv(data_path, nrows=10)
+    data_path = home_dir / 'data' / 'raw' / 'test.csv'
+    data_path_str = data_path.as_posix()
+
+    data = pd.read_csv(data_path_str, nrows=10)
     feature_build(data, 'test')
     print(data.head())

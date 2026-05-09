@@ -1,0 +1,38 @@
+.dvc
+.github
+.vscode
+data
+docs
+mlruns
+dvclive
+# models
+notebooks
+references
+reports
+# src
+tests
+.dvcignore
+.env
+.gitignore
+# app.py
+data.dvc
+deployment.yaml
+dev-requirements.txt
+Dockerfile
+dvc.lock
+dvc.yaml
+LICENSE
+Makefile
+mlflow.db
+models.dvc
+params.yaml
+pyproject.toml
+README.md
+# requirements.txt
+seldon_deployment.yaml
+seldon_iris.yaml
+seldon_gateway.yaml
+seldon-podmonitor.yaml
+setup.py
+test_environment.py
+tox.ini

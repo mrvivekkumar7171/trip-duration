@@ -1,8 +1,13 @@
 schema: '2.0'
 stages:
   build_features:
-    cmd: python .\src\features\build_features.py
+    cmd: python .\src\features\build_features.py .\data\raw\ .\data\processed\
     deps:
+    - path: .\data\processed\
+      hash: md5
+      md5: fcf68ca89b30e31713e10172cfa9513c.dir
+      size: 335293872
+      nfiles: 3
     - path: .\data\raw\
       hash: md5
       md5: 775bd993f722629b752d2bdee167a7a2.dir
@@ -10,29 +15,75 @@ stages:
       nfiles: 3
     - path: .\src\features\build_features.py
       hash: md5
-      md5: 49df13e2a0713e6caabecaeb1a9d754d
-      size: 1029
+      md5: 68363b6e4c8d9c419ad39c641a968015
+      size: 1142
   train_model:
-    cmd: python .\src\models\train_model.py .\data\processed\
+    cmd: python .\src\models\train_model.py .\data\processed\ .\models\
     deps:
     - path: .\data\processed\
       hash: md5
       md5: fcf68ca89b30e31713e10172cfa9513c.dir
       size: 335293872
       nfiles: 3
-    - path: .\src\models\train_model.py
-      hash: md5
-      md5: 9a4988aeaf7eec12b826ad0ab8b79dd7
-      size: 7762
-  push_model:
-    cmd: python .\src\models\push_model.py .\data\processed\
-    deps:
     - path: .\models\
       hash: md5
       md5: 05807d0012e8dbb83518d2433db77cea.dir
       size: 1153
       nfiles: 1
+    - path: .\src\features\build_features.py
+      hash: md5
+      md5: 68363b6e4c8d9c419ad39c641a968015
+      size: 1142
     - path: .\src\models\train_model.py
       hash: md5
-      md5: 9a4988aeaf7eec12b826ad0ab8b79dd7
-      size: 7762
+      md5: 3cb647a52b218fee73b7c495013c3898
+      size: 8150
+    params:
+      params.yaml:
+        train_model.classification: false
+        train_model.max_evals: 50
+        train_model.target: trip_duration
+        train_model.test_seed: 222
+        train_model.test_size: 0.2
+        train_model.train_seed: 222
+        train_model.train_size: 0.001
+  push_model:
+    cmd: python .\src\models\push_model.py .\models\model.joblib trip-duration-dvc-storages
+    deps:
+    - path: .\models\model.joblib
+      hash: md5
+      md5: de1b884ead6fff69bf57ce2fbbca6074
+      size: 1153
+    - path: .\src\models\push_model.py
+      hash: md5
+      md5: 6cbf36ba39cf294ae38e7ad2af188191
+      size: 1069
+    - path: .\src\visualization\visualize.py
+      hash: md5
+      md5: 63657f56ccbf4b26b1efebe5a60cb98e
+      size: 3183
+  visualize:
+    cmd: python .\src\visualization\visualize.py .\models\model.joblib .\data\processed\
+      .\metrics_output\
+    deps:
+    - path: .\data\processed\
+      hash: md5
+      md5: fcf68ca89b30e31713e10172cfa9513c.dir
+      size: 335293872
+      nfiles: 3
+    - path: .\models\model.joblib
+      hash: md5
+      md5: de1b884ead6fff69bf57ce2fbbca6074
+      size: 1153
+    - path: .\src\models\train_model.py
+      hash: md5
+      md5: 3cb647a52b218fee73b7c495013c3898
+      size: 8150
+    - path: .\src\visualization\visualize.py
+      hash: md5
+      md5: 63657f56ccbf4b26b1efebe5a60cb98e
+      size: 3183
+    params:
+      params.yaml:
+        visualize.classification: false
+        visualize.target: trip_duration

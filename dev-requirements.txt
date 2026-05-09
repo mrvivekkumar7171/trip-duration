@@ -1,6 +1,29 @@
-# local package
--e .
+# Development dependencies
 
-# external requirements
-python-dotenv>=0.5.1
+# for CI
+joblib
+fastapi
+uvicorn
 lazypredict
+
+# for CT
+pip
+python-dotenv>=0.5.1
+
+# for local package
+# -e .
+
+# for CML
+os
+unittest
+matplotlib
+
+# for Docker
+scikit-learn==1.7.2
+pandas
+numpy
+
+# for CD
+sagemaker
+ipykernel
+boto3

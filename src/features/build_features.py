@@ -1,6 +1,6 @@
 from feature_definitions import feature_build
 import pandas as pd
-import pathlib
+import pathlib, sys
 
 
 def load_data(data_path):
@@ -19,16 +19,20 @@ def save_data(train, test, output_path):
 if __name__ == '__main__':
     curr_dir = pathlib.Path(__file__)
     home_dir = curr_dir.parent.parent.parent
-    
-    train_path = home_dir.as_posix() + '/data/raw/train.csv'
-    test_path = home_dir.as_posix() + '/data/raw/test.csv'
-    
-    train_data = pd.read_csv(train_path)
-    test_data = pd.read_csv(test_path)
+    input_path = home_dir / sys.argv[1]
 
-    output_path = home_dir.as_posix() + '/data/processed'
+    train_path = input_path / 'train.csv'
+    test_path = input_path / 'test.csv'
+    train_path_str = train_path.as_posix()
+    test_path_str = test_path.as_posix()
 
-    train_data = feature_build(train_data, 'train-data')
-    test_data = feature_build(test_data, 'test-data')
+    train_data = pd.read_csv(train_path_str)
+    test_data = pd.read_csv(test_path_str)
 
-    save_data(train_data, test_data, output_path)
+    output_path = home_dir / sys.argv[2]
+    output_path_str = output_path.as_posix()
+
+    train_data = feature_build(train_data, 'train')
+    test_data = feature_build(test_data, 'test')
+
+    save_data(train_data, test_data, output_path_str)

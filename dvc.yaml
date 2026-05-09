@@ -1,16 +1,50 @@
 stages:
+  # make_dataset:
+  #   cmd: python .\src\make_dataset.py .\data\raw\trip_duration.csv .\data\processed\
+  #   deps:
+  #   - .\src\make_dataset.py
+  #   - .\data\raw\trip_duration.csv
+  #   - .\data\processed\
+  #   params:
+  #   - make_dataset.test_split
+  #   - make_dataset.seed
+  #   # outs: # dvc will track the outs files and folders if it is not tracked by git and dvc add command is not used for it or it's parent folder.
+  #   # - .\data\processed\
   build_features:
-    cmd: python .\src\features\build_features.py
+    cmd: python .\src\features\build_features.py .\data\raw\ .\data\processed\
     deps:
-    - .\data\raw\
+    # - .\src\make_dataset.py
     - .\src\features\build_features.py
-  train_model:
-    cmd: python .\src\models\train_model.py .\data\processed\
-    deps:
+    - .\data\raw\
     - .\data\processed\
-    - .\src\models\train_model.py
-  push_model:
-    cmd: python .\src\models\push_model.py .\data\processed\
+  train_model:
+    cmd: python .\src\models\train_model.py .\data\processed\ .\models\
     deps:
-    - .\models\
+    - .\src\features\build_features.py
     - .\src\models\train_model.py
+    - .\data\processed\
+    - .\models\
+    params:
+    - train_model.test_seed
+    - train_model.test_size
+    - train_model.train_seed
+    - train_model.train_size
+    - train_model.max_evals
+    - train_model.classification
+    - train_model.target
+  visualize:
+    cmd: python .\src\visualization\visualize.py .\models\model.joblib .\data\processed\ .\metrics_output\
+    deps:
+    - .\src\models\train_model.py
+    - .\src\visualization\visualize.py
+    - .\models\model.joblib
+    - .\data\processed\
+    params:
+    - visualize.classification
+    - visualize.target
+  push_model:
+    cmd: python .\src\models\push_model.py .\models\model.joblib trip-duration-dvc-storages
+    deps:
+    - .\src\visualization\visualize.py
+    - .\src\models\push_model.py
+    - .\models\model.joblib

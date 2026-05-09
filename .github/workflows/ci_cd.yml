@@ -1,29 +1,67 @@
-name: CI Pipeline
+name: CI/CT/CD Pipeline
 
+# perform the below jobs on push to the repository.
 on:
   push:
 
 permissions:
   id-token: write
   contents: read
+  pull-requests: write
 
 jobs:
-  integration:
+  Continuous-Integration:
+    # OS to run the pipeline like MacOS, Linux or Windows
     name: Continuous Integration
     runs-on: ubuntu-latest
+    # checkout latest commit in the repository, set up python with version and set up cml
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.13.5
+
+      - name: CML Setup
+        uses: iterative/setup-cml@v3
+
+      # run the below commands for upgrading pip and installing dependencies
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r dev-requirements.txt
+
+      # # run a file
+      # - name: Run main file
+      #   run: |
+      #     python main.py
 
       - name: Lint code
         run: echo "Linting repository"
 
       - name: Run unit tests
-        run: echo "Running unit tests"
+        run: |
+          echo "Running unit tests"
+          python -m unittest discover
 
-  build-and-push-ecr-image:
-    name: Push to Artifact Registry (GCP)
-    needs: integration
+      - name: Creating CML Report for unit tests
+        env:
+          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+
+          echo "# Report on CI/CT/CD" >> report.md 
+          echo "## Bar Plots" >> report.md
+          echo '![](./bars.png "Bar plot")' >> report.md
+          echo "## Line Plots" >> report.md
+          echo '![](./lines.png "Line plot")' >> report.md
+
+          cml comment create report.md
+
+  Build-and-Push-Docker-Image:
+    name: Build and Push Docker Image to Artifact Registry (GCP)
+    needs: Continuous-Integration
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -51,7 +89,7 @@ jobs:
         run: |
           gcloud storage cp gs://trip-duration-dvc-storages/models/model.joblib ./models/model.joblib
 
-      - name: Build, tag, and push image to Artifact Registry
+      - name: Build, tag, and push a Docker image to Artifact Registry
         id: build-image
         env:
           IMAGE_NAME: trip-duration
@@ -66,8 +104,10 @@ jobs:
           echo "image=$IMAGE_URI" >> $GITHUB_OUTPUT
 
   Continuous-Deployment:
+    # use self-hosted runner for CD to gain environment control, access internal resources, and manage infrastructure costs.
+    name: Continuous Deployment
     runs-on: self-hosted
-    needs: build-and-push-ecr-image
+    needs: Build-and-Push-Docker-Image
     steps:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
@@ -78,7 +118,7 @@ jobs:
         run: |
           gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev
       
-      - name: Pull latest images
+      - name: Pull latest image
         env:
           IMAGE_NAME: trip-duration
           PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
@@ -100,4 +140,4 @@ jobs:
             REPO_NAME: ${{ secrets.GCP_AR_REPO_NAME }}
         run: |
             IMAGE_URI=$REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:latest
-            docker run -d -p 8080:8080 --ipc="host" --name=trip-duration $IMAGE_URI
+            docker run -d -p 8080:8080 --ipc="host" --name=$IMAGE_NAME $IMAGE_URI

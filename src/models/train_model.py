@@ -3,18 +3,22 @@
     Hyperparameter assume you have already selected the best model for you data.
     We will push this model to GCS and also copy in the root folder for Dockerfile to pick.
     Select train_size for tunning such that there are atleast 1000 rows. 
+
+    To Production, there should be 3 test datasets, in which we test our model on on 2nd and 3rd test dataset
+    only once after getting 5 best model on 1st test dataset. Also, use recall and accuracy as metrics for 1st
+    test dataset, but for 2nd and 3rd test dataset use only roc as metric.
 """
 from lazypredict.Supervised import LazyClassifier, LazyRegressor, CLASSIFIERS, REGRESSORS
 from sklearn.model_selection import train_test_split, cross_val_score
 from hyperopt import hp, fmin, tpe, Trials, STATUS_OK, space_eval
 from sklearn.metrics import mean_squared_error, accuracy_score
-import pathlib, sys, joblib, mlflow, warnings
+import pathlib, sys, joblib, mlflow, warnings, yaml
 import mlflow.sklearn
 import pandas as pd
 
 warnings.filterwarnings('ignore')
 
-def find_best_model_with_params(X_train, y_train, X_tune, y_tune, X_test, y_test, is_classification):
+def find_best_model_with_params(X_train, y_train, X_tune, y_tune, X_test, y_test, is_classification, max_evals):
     """Find Best Model with LazyPredict and then tune it with Hyperopt"""
     
     if is_classification:
@@ -111,7 +115,7 @@ def find_best_model_with_params(X_train, y_train, X_tune, y_tune, X_test, y_test
                 fn=objective,
                 space=space,
                 algo=tpe.suggest,
-                max_evals=50, # Number of combinations to try
+                max_evals=max_evals,
                 trials=Trials(),
                 verbose=True
             )
@@ -145,27 +149,29 @@ def save_model(model, output_path):
 def main():
     curr_dir = pathlib.Path(__file__)
     home_dir = curr_dir.parent.parent.parent
+    params_file = home_dir.as_posix() + '/params.yaml'
+    params = yaml.safe_load(open(params_file))["train_model"]
 
-    input_file = sys.argv[1]
-    data_path = home_dir.as_posix() + input_file
-    output_path = home_dir.as_posix() + "/models"
-    pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
+    data_path = home_dir / sys.argv[1]
+    output_path = home_dir / sys.argv[2]
+    data_path_str = data_path.as_posix()
+    output_path_str = output_path.as_posix()
+    pathlib.Path(output_path_str).mkdir(parents=True, exist_ok=True)
 
     mlflow.set_experiment("Experiment_Trip_Duration_Prediction")
-    TARGET = "trip_duration" # Change this according to your dataset
+    TARGET = params['target']
 
-    train_features = pd.read_csv(data_path + "/train.csv")
+    train_features = pd.read_csv(data_path_str + "/train.csv")
     X = train_features.drop(TARGET, axis=1)
     y = train_features[TARGET]
     
-    # Auto-detect if task is Classification or Regression based on target variable
-    is_classification = True if y.dtype == 'object' or y.nunique() < 20 else False
+    is_classification = params['classification']
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=222)
-    X_tune, _, y_tune, _ = train_test_split(X_train, y_train, train_size=0.001, random_state=222)
-    trained_model = find_best_model_with_params(X_train, y_train, X_tune, y_tune, X_test, y_test, is_classification)
-    save_model(trained_model, output_path)
-    # print(f"Model successfully saved in '{output_path}'.")
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=params['test_size'], random_state=params['test_seed'])
+    X_tune, _, y_tune, _ = train_test_split(X_train, y_train, train_size=params['train_size'], random_state=params['train_seed'])
+    trained_model = find_best_model_with_params(X_train, y_train, X_tune, y_tune, X_test, y_test, is_classification, params['max_evals'])
+    save_model(trained_model, output_path_str)
+    # print(f"Model successfully saved in '{output_path_str}'.")
 
 
 if __name__ == "__main__":

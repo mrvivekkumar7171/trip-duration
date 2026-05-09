@@ -86,10 +86,19 @@ target/
 
 # Mypy cache
 .mypy_cache/
-/models
-/dvclive
-/mlruns
-/data
 
 # AWS files
 .aws/*
+
+# DVC pipelines output that are tracked by DVC but not needed in Git
+/data
+/mlruns
+/models
+/dvclive
+mlflow.db
+/metrics_output
+
+# Local environment variables and IDE settings
+.vscode/
+.env
+.ipynb_checkpoints/

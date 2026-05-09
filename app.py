@@ -1,4 +1,4 @@
-# main.py
+# To Run : python app.py
 from src.features.feature_definitions import feature_build
 from pydantic import BaseModel
 from fastapi import FastAPI
@@ -29,18 +29,23 @@ def home():
 
 @app.post("/predict")
 def predict(input_data: PredictionInput):
-    # Extract features from input_data and make predictions using the loaded model
-    features = {
-            'vendor_id': input_data.vendor_id,
-            'pickup_datetime': input_data.pickup_datetime,
-            'passenger_count': input_data.passenger_count,
-            'pickup_longitude': input_data.pickup_longitude,
-            'pickup_latitude': input_data.pickup_latitude,
-            'dropoff_longitude': input_data.dropoff_longitude,
-            'dropoff_latitude': input_data.dropoff_latitude,
-            'store_and_fwd_flag': input_data.store_and_fwd_flag
-}
-    features = pd.DataFrame(features, index=[0])
+    """
+        Extract features from input_data and make predictions using the loaded model.
+        Convert Pydantic input directly into a dictionary then into a 1-row pandas DataFrame.
+    """
+#     features = {
+#             'vendor_id': input_data.vendor_id,
+#             'pickup_datetime': input_data.pickup_datetime,
+#             'passenger_count': input_data.passenger_count,
+#             'pickup_longitude': input_data.pickup_longitude,
+#             'pickup_latitude': input_data.pickup_latitude,
+#             'dropoff_longitude': input_data.dropoff_longitude,
+#             'dropoff_latitude': input_data.dropoff_latitude,
+#             'store_and_fwd_flag': input_data.store_and_fwd_flag
+# }
+#     features = pd.DataFrame(features, index=[0])
+    features = input_data.model_dump()
+    features = pd.DataFrame([features])
     features = feature_build(features, 'prod')
     prediction = model.predict(features)[0].item()
     # Return the prediction
@@ -48,4 +53,6 @@ def predict(input_data: PredictionInput):
 
 if __name__ == "__main__":
     import uvicorn
+
+    # uvicorn.run(app, host="127.0.0.1", port=8080)
     uvicorn.run(app, host="0.0.0.0", port=8080)

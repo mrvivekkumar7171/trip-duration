@@ -1,4 +1,14 @@
+make_dataset:
+  test_split: 0.25
+  seed: 2023
 train_model:
-  seed: 21
-  n_estimators: 50
-  max_depth: 10
+  test_seed: 222
+  test_size: 0.20
+  train_seed: 222
+  train_size: 0.001
+  max_evals: 50
+  classification: False
+  target: trip_duration
+visualize:
+  classification: False
+  target: trip_duration

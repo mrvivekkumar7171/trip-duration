@@ -1,5 +1,14 @@
+# Deployment dependencies for app.py
+
+# Important Libraries
 fastapi
 joblib
-uvicorn
-scikit-learn==1.7.2
+scikit-learn==1.7.2 # This is needed by joblib to read and load the model
 pandas
+
+# Built-in Libraries
+pydantic
+
+# Server Libraries
+uvicorn
+gunicorn
