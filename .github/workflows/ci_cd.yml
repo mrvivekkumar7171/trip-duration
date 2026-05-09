@@ -49,7 +49,7 @@ jobs:
 
       - name: Download model from GCS
         run: |
-          gcloud storage cp gs://trip-duration-dvc-storages/models/model.joblib ./model.joblib
+          gcloud storage cp gs://trip-duration-dvc-storages/models/model.joblib ./models/model.joblib
 
       - name: Build, tag, and push image to Artifact Registry
         id: build-image

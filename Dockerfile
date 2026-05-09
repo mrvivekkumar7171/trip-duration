@@ -1,12 +1,12 @@
 # Use an official Python runtime as a parent image
-FROM python:3.8-slim
+FROM python:3.13.5-slim
 
 # Set the working directory to /app
 WORKDIR /app
 
 # Copy the required files and directory into the container at /app
 COPY app.py /app/app.py
-COPY model.joblib /app/models/model.joblib
+COPY /models/model.joblib /app/models/model.joblib
 COPY src/ /app/src/
 COPY requirements.txt /app/requirements.txt
 

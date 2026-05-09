@@ -1,7 +1,5 @@
-# external requirements
 fastapi
 joblib
 uvicorn
-scikit-learn
+scikit-learn==1.7.2
 pandas
-numpy
