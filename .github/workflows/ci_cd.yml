@@ -61,7 +61,7 @@ jobs:
           cml comment create report.md
 
   Build-and-Push-Docker-Image:
-    name: Build and Push Docker Image to Artifact Registry (GCP)
+    name: Build and Push Docker Image # to Artifact Registry (GCP)
     needs: Continuous-Integration
     runs-on: ubuntu-latest
     steps:

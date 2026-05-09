@@ -11,6 +11,13 @@ ENV PYTHONDONTWRITEBYTECODE=1\
 # Set the working directory to /app
 WORKDIR /app
 
+# Download dependencies as a separate step to take advantage of Docker's caching.
+# Leverage a cache mount to /root/.cache/pip to speed up subsequent builds.
+# Leverage a bind mount to requirements.txt to avoid having to copy them into into this layer.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    --mount=type=bind,source=requirements.txt,target=requirements.txt \
+    python -m pip install -r requirements.txt
+
 # Create a non-privileged user that the app will run under. https://docs.docker.com/go/dockerfile-user-best-practices/
 ARG UID=10001
 RUN adduser \
@@ -25,19 +32,14 @@ RUN adduser \
 USER appuser
 
 # Copy required files to run the application inside app directory in the container and ensure they are owned by the non-root user.
-COPY --chown=appuser:appuser app.py requirements.txt /models/model.joblib src/ /app/
-
-# Download dependencies as a separate step to take advantage of Docker's caching.
-# Leverage a cache mount to /root/.cache/pip to speed up subsequent builds.
-# Leverage a bind mount to requirements.txt to avoid having to copy them into into this layer.
-RUN --mount=type=cache,target=/root/.cache/pip \
-    --mount=type=bind,source=requirements.txt,target=requirements.txt \
-    python -m pip install -r requirements.txt
+COPY --chown=appuser:appuser app.py /app/
+COPY --chown=appuser:appuser models/ /app/models/
+COPY --chown=appuser:appuser src/ /app/src/
 
 # Expose the port that the application listens on.
 EXPOSE 8080
 
 # Run app.py when the container launches
 # CMD ["python", "app.py"]
-# CMD ["gunicorn", "app:app", "--bind=0.0.0.0:8000"]
-CMD ["gunicorn", "app:app", "--workers", "2", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
+# CMD ["gunicorn", "app:app", "--bind=0.0.0.0:8080"]
+CMD ["gunicorn", "app:app", "--workers", "2", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8080"]
