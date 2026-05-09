@@ -41,7 +41,7 @@ jobs:
 
       - name: Set up Cloud SDK
         id: login-ecr
-        uses: google-github-actions/setup-gcloud@v2
+        uses: google-github-actions/setup-gcloud@v3
 
       - name: Configure Docker for Artifact Registry
         run: |
@@ -63,7 +63,7 @@ jobs:
           
           docker build -t $IMAGE_URI .
           docker push $IMAGE_URI
-          echo "::set-output name=image::$IMAGE_URI"
+          echo "image=$IMAGE_URI" >> $GITHUB_OUTPUT
 
   Continuous-Deployment:
     runs-on: self-hosted
