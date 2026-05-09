@@ -4,3 +4,4 @@ joblib
 uvicorn
 scikit-learn
 pandas
+numpy
