@@ -10,8 +10,9 @@
 """
 from lazypredict.Supervised import LazyClassifier, LazyRegressor, CLASSIFIERS, REGRESSORS
 from sklearn.model_selection import train_test_split, cross_val_score
-from hyperopt import hp, fmin, tpe, Trials, STATUS_OK, space_eval
 from sklearn.metrics import mean_squared_error, accuracy_score
+from hyperopt import fmin, tpe, Trials, STATUS_OK, space_eval
+from src.models.hyperparameters import get_search_space
 import pathlib, sys, joblib, mlflow, warnings, yaml
 import mlflow.sklearn
 import pandas as pd
@@ -34,41 +35,6 @@ def find_best_model_with_params(X_train, y_train, X_tune, y_tune, X_test, y_test
     best_model_name = models.index[0]
     BestModelClass = model_dict[best_model_name]
     print(f"\nTop 3 Models:\n{models.head(3)}")
-
-    def get_search_space(model_name):
-        """Define search spaces for a few top contenders"""
-
-        if model_name in ['RandomForestClassifier', 'ExtraTreesClassifier']:
-            return {
-                'n_estimators': hp.choice('n_estimators', [50, 100, 150, 200]),
-                'max_depth': hp.choice('max_depth', [None, 5, 10, 20]),
-                'min_samples_split': hp.choice('min_samples_split', [2, 5, 10])
-            }
-        elif model_name == 'SVC':
-            return {
-                'C': hp.loguniform('C', -3, 2),
-                'kernel': hp.choice('kernel', ['linear', 'rbf', 'poly'])
-            }
-        elif model_name == 'LGBMClassifier':
-            return {
-                'learning_rate': hp.loguniform('learning_rate', -5, 0),
-                'n_estimators': hp.choice('n_estimators', [50, 100, 200]),
-                'max_depth': hp.choice('max_depth', [3, 5, 10])
-            }
-        elif model_name == 'RandomForestRegressor':
-            return {
-                "n_estimators": hp.choice("n_estimators", [10, 15, 20]),
-                "max_depth": hp.choice("max_depth", [6, 8, 10]),
-                "max_features": hp.choice("max_features", ["sqrt", "log2", None]),
-            }
-        elif model_name == 'XGBRegressor':
-            return {
-                "n_estimators": hp.choice("n_estimators", [10, 15, 20]),
-                "max_depth": hp.choice("max_depth", [6, 8, 10]),
-                "learning_rate": hp.uniform("learning_rate", 0.03, 0.3),
-            }
-        else:
-            return {} # Empty space if model isn't defined above
 
     space = get_search_space(best_model_name)
 
