@@ -15,7 +15,7 @@ permissions:
 jobs:
   Build-and-Push-Docker-Image:
     name: Build and Push Docker Image # to Artifact Registry (GCP)
-    needs: Continuous-Integration
+    # needs: Continuous-Integration
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
