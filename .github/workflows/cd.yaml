@@ -1,8 +1,10 @@
-name: CI/CT/CD Pipeline
+name: CD Pipeline
 
 # perform the below jobs on push to the repository.
 on:
   push:
+    tags:
+      - '*'
 
 permissions:
   id-token: write
@@ -11,55 +13,6 @@ permissions:
   issues: write
 
 jobs:
-  Continuous-Integration:
-    # OS to run the pipeline like MacOS, Linux or Windows
-    name: Continuous Integration
-    runs-on: ubuntu-latest
-    # checkout latest commit in the repository, set up python with version and set up cml
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v5
-
-      - name: Setup Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: 3.13.5
-
-      - name: CML Setup
-        uses: iterative/setup-cml@v3
-
-      # run the below commands for upgrading pip and installing dependencies
-      - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r dev-requirements.txt
-
-      # # run a file
-      # - name: Run main file
-      #   run: |
-      #     python main.py
-
-      - name: Lint code
-        run: echo "Linting repository"
-
-      - name: Run unit tests
-        run: |
-          echo "Running unit tests"
-          python -m unittest discover
-
-      - name: Creating CML Report for unit tests
-        env:
-          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-
-          echo "# Report on CI/CT/CD" >> report.md 
-          echo "## Bar Plots" >> report.md
-          echo '![](./bars.png "Bar plot")' >> report.md
-          echo "## Line Plots" >> report.md
-          echo '![](./lines.png "Line plot")' >> report.md
-
-          cml comment create report.md
-
   Build-and-Push-Docker-Image:
     name: Build and Push Docker Image # to Artifact Registry (GCP)
     needs: Continuous-Integration
@@ -67,6 +20,18 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # fetch all history. The default is 1, which means Git won't know about the master branch to compare it.
+
+      # Check if the current tagged commit is part of the master branch history, else halts the workflow and marks it as failed.
+      - name: Verify Tag is on Master Branch
+        run: |
+          if git merge-base --is-ancestor HEAD origin/master; then
+            echo "Success: Tag is on the master branch. Proceeding with CI/CD..."
+          else
+            echo "Error: Tag was pushed, but it is NOT on the master branch. Stopping."
+            exit 1
+          fi
 
       - name: Install Utilities
         run: |

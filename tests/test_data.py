@@ -1,51 +1,87 @@
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from src.features.feature_definitions import feature_build
+from src.features.build_features import BuildFeatures
+from src.logger import infologger
+import unittest, os, pickle, yaml
 import matplotlib.pyplot as plt
-import unittest, os
+import pandas as pd
+import numpy as np
 
 class TestDemo(unittest.TestCase):
+    """
+        It fetchs a pre-trained ML model and validation dataset from cloud storage (AWS S3), process the
+        test data, generate predictions, calculate how accurate the model is, and finally output a bar chart
+        visualizing the performance metrics.
+    """
 
-    def test_basic_addition(self):
-        """A simple test to prove the pipeline works."""
-        result = 2 + 2
-        expected = 4
-        self.assertEqual(result, expected)
+    def __init__(self):
+        """connect to an AWS S3 bucket and download essential files. If the downloads fail, it logs an
+        error. If they succeed, it immediately loads the CSV data into a Pandas DataFrame for processing.
+        """
+        try:
+            s3 = boto3.client("s3")
+            s3.download_file(Bucket="nyctrip-bucket", Key="validate_data.csv", Filename="validate_data.csv")
+            s3.download_file(Bucket="nyctrip-bucket", Key="test_bestmodel.pkl", Filename="test_bestmodel.pkl")
+            s3.download_file(Bucket="nyctrip-bucket", Key="loc_kmeans.pkl", Filename="loc_kmeans.pkl")
+        except Exception as e:
+            infologger.info(f'Not able to Connect to S3 :  {e}')
+        else:
+            self.df = pd.read_csv("validate_data.csv")
 
-    def test_basic_subtraction(self):
-        """Another simple test."""
-        result = 10 - 5
-        expected = 5
-        self.assertEqual(result, expected)
+    def predict(self):
+        """Prepares the data and generates predictions
+        """
+        # building a features for prediction on validate data 
+        # seperating input and output data
+        # initializing a object of predictor class
+        # generating predictions
+        feat = BuildFeatures()
+        self.df = feat.build(self.df, 'loc_kmeans.pkl') 
+        features = yaml.safe_load(open('params.yaml'))['train_model']['features']
+        self.df = self.df[features]
 
-    def test_plot_generation(self):
-        # --- First Plot: Bar Chart ---
-        fig, ax = plt.subplots()
+        target = 'trip_duration'
+        self.x = self.df.drop(columns=[target])
+        self.y = self.df[target]
 
-        fruits = ['apple', 'blueberry', 'cherry', 'orange']
-        counts = [140, 10, 30, 55]
-        bar_labels = ['red', 'blue', '_red', 'orange']
-        bar_colors = ['tab:red', 'tab:blue', 'tab:red', 'tab:orange']
+        predictor = pickle.load(open('test_bestmodel.pkl', 'rb'))
 
-        ax.bar(fruits, counts, label=bar_labels, color=bar_colors)
+        self.y_pred = predictor.predict(self.x)
 
-        ax.set_ylabel('fruit supply')
-        ax.set_title('Fruit supply by kind and color')
-        ax.legend(title='Fruit color')
+    def score(self):
+        rmse = round(np.sqrt(mean_squared_error(self.y, self.y_pred)),2)
+        mae = round(mean_absolute_error(self.y, self.y_pred),2)
+        # root mean square percentage error
+        rmspe = round(np.sqrt(np.sum(np.power(((self.y-self.y_pred)/self.y), 2))/len(self.y))*100, 3)
+        r2 = round(r2_score(self.y, self.y_pred)*100, 2)
+        #dictionarself.y storing all these testing score and this will be the returning value of function
+        self.score_dict = {
+            'Root Mean Square Error':rmse,
+            'Mean Absolute Error':mae,
+            'Root Mean Square Percentage Error':rmspe,
+            'R2 Score':r2
+            }
+        return self.score_dict
 
-        plt.savefig('bars.png', bbox_inches='tight')
-        plt.close(fig) # Good practice to close figures in tests
-
-        # --- Second Plot: Line Chart ---
-        cat = ["bored", "happy", "happy", "happy", "happy", "bored"]
-        dog = ["bored", "bored", "bored", "happy", "bored", "bored"]
-        activity = ["combing", "drinking", "feeding", "napping", "playing", "washing"]
-
-        fig2, ax2 = plt.subplots()
-        ax2.plot(activity, dog, label="dog")
-        ax2.plot(activity, cat, label="cat")
-        ax2.legend()
-
-        plt.savefig('lines.png', bbox_inches='tight')
-        print(f"Image saved successfully at: {os.path.abspath('lines.png')}")
-        plt.close(fig2)
+    def test(self):
+        try:
+            self.predict()
+            self.score()
+            fig, ax = plt.subplots()
+            ax.bar(list(self.score_dict.keys()), list(self.score_dict.values()))
+            ax.set_ylabel('Score')
+            ax.set_xlabel('Metrices')
+            ax.set_title('Different Scoring Metrices for model')
+            plt.xticks(rotation = 'vertical')
+            plt.savefig('metrices_bars.png')
+            plt.close(fig) # Good practice to close figures in tests
+            print(f"Image saved successfully at: {os.path.abspath('metrices_bars.png')}")
+        except Exception as e:
+            self.message = 'Error in plotting and predicting : ' + str(e)
+            infologger.info(self.message)
+        else:
+            self.message = 'Plotted successful'
+            infologger.info(self.message)
 
 if __name__ == '__main__':
     unittest.main()

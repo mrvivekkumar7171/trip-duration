@@ -97,6 +97,7 @@ target/
 /dvclive
 mlflow.db
 /metrics_output
+/logs
 
 # Local environment variables and IDE settings
 .vscode/
