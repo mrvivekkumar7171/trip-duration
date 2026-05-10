@@ -54,12 +54,15 @@ class TestDemo(unittest.TestCase):
         # root mean square percentage error
         rmspe = round(np.sqrt(np.sum(np.power(((self.y-self.y_pred)/self.y), 2))/len(self.y))*100, 3)
         r2 = round(r2_score(self.y, self.y_pred)*100, 2)
+        # adjusted_r2_score
+        adjr2 = round(1-(1-r2_score(self.y, self.y_pred))*((self.x.shape[0]-1)/(self.x.shape[0]-self.x.shape[1]-1)),2)
         #dictionarself.y storing all these testing score and this will be the returning value of function
         self.score_dict = {
             'Root Mean Square Error':rmse,
             'Mean Absolute Error':mae,
             'Root Mean Square Percentage Error':rmspe,
-            'R2 Score':r2
+            'R2 Score':r2,
+            'Adjusted R2 Score':adjr2
             }
         return self.score_dict
 

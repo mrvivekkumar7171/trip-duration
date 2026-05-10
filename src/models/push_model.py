@@ -1,7 +1,8 @@
-from google.auth.exceptions import DefaultCredentialsError
-from src.logger import infologger
-from google.cloud import storage
 import sys, pathlib
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
+from google.auth.exceptions import DefaultCredentialsError
+from google.cloud import storage
+from logger import infologger
 
 class GCSPush:
     """Create a GCS client (automatically handles credentials if set up correctly)
@@ -34,11 +35,12 @@ if __name__ == '__main__':
 
     model_path = home_dir / sys.argv[1]
     model_path_str = model_path.as_posix()
-    gcs_bucket_name = sys.argv[2]
+    model_output_path = sys.argv[2]
+    gcs_bucket_name = sys.argv[3]
 
     try:
         gcs = GCSPush()
-        gcs.push(model_path_str, gcs_bucket_name, model_path_str)
+        gcs.push(model_path_str, gcs_bucket_name, model_output_path)
     except Exception as e:
         infologger.info(f'Failed in pushing a model to GCS :  {e}')
     else:

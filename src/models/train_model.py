@@ -12,7 +12,7 @@ from lazypredict.Supervised import LazyClassifier, LazyRegressor, CLASSIFIERS, R
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import mean_squared_error, accuracy_score
 from hyperopt import fmin, tpe, Trials, STATUS_OK, space_eval
-from src.models.hyperparameters import get_search_space
+from hyperparameters import get_search_space
 import pathlib, sys, joblib, mlflow, warnings, yaml
 import mlflow.sklearn
 import pandas as pd

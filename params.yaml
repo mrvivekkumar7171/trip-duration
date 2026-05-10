@@ -1,8 +1,18 @@
 make_dataset:
   test_split: 0.25
   seed: 2023
+  trip_duration_lowlimit: 10
+  trip_duration_uplimit: 30000
+  pickup_latitude_lowlimit: 40.637044
+  pickup_latitude_uplimit: 40.855256
+  pickup_longitude_lowlimit: -74.035735
+  pickup_longitude_uplimit: -73.770272
+  dropoff_latitude_lowlimit: 40.637044
+  dropoff_latitude_uplimit: 40.855256
+  dropoff_longitude_lowlimit: -74.035735
+  dropoff_longitude_uplimit: -73.770272
 train_model:
-  test_seed: 222
+  test_seed: 108
   test_size: 0.20
   train_seed: 222
   train_size: 0.001

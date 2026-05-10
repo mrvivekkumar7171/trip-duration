@@ -8,8 +8,17 @@ stages:
   #   params:
   #   - make_dataset.test_split
   #   - make_dataset.seed
+  #   - make_dataset.pickup_latitude_lowlimit
+  #   - make_dataset.pickup_latitude_uplimit
+  #   - make_dataset.pickup_longitude_lowlimit
+  #   - make_dataset.pickup_longitude_uplimit
+  #   - make_dataset.dropoff_latitude_lowlimit
+  #   - make_dataset.dropoff_latitude_uplimit
+  #   - make_dataset.dropoff_longitude_lowlimit
+  #   - make_dataset.dropoff_longitude_uplimit
   #   # outs: # dvc will track the outs files and folders if it is not tracked by git and dvc add command is not used for it or it's parent folder.
   #   # - .\data\processed\
+  
   build_features:
     cmd: python .\src\features\build_features.py .\data\raw\ .\data\processed\
     deps:
@@ -17,6 +26,7 @@ stages:
     - .\src\features\build_features.py
     - .\data\raw\
     - .\data\processed\
+  
   train_model:
     cmd: python .\src\models\train_model.py .\data\processed\ .\models\
     deps:
@@ -32,6 +42,7 @@ stages:
     - train_model.max_evals
     - train_model.classification
     - train_model.target
+  
   visualize:
     cmd: python .\src\visualization\visualize.py .\models\model.joblib .\data\processed\ .\metrics_output\
     deps:
@@ -42,8 +53,9 @@ stages:
     params:
     - visualize.classification
     - visualize.target
+  
   push_model:
-    cmd: python .\src\models\push_model.py .\models\model.joblib trip-duration-dvc-storages
+    cmd: python .\src\models\push_model.py .\models\model.joblib models\model.joblib trip-duration-dvc-storages
     deps:
     - .\src\visualization\visualize.py
     - .\src\models\push_model.py

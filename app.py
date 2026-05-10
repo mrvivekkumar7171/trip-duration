@@ -1,5 +1,6 @@
 # To Run : python app.py
 from src.features.feature_definitions import feature_build
+from src.logger import infologger
 from pydantic import BaseModel
 from fastapi import FastAPI
 from joblib import load
@@ -18,10 +19,15 @@ class PredictionInput(BaseModel):
     dropoff_latitude: float
     store_and_fwd_flag: float
 
-
-# Load the pre-trained RandomForest model
-model_path = "models/model.joblib"
-model = load(model_path)
+try:
+    """Load the pre-trained model using joblib
+    """
+    model_path = "models/model.joblib"
+    model = load(model_path)
+except Exception as e:
+    infologger.info(f'Model loading has been failed with error : {e}')
+else:
+    infologger.info('Model loaded successfully')
 
 @app.get("/")
 def home():
@@ -33,23 +39,37 @@ def predict(input_data: PredictionInput):
         Extract features from input_data and make predictions using the loaded model.
         Convert Pydantic input directly into a dictionary then into a 1-row pandas DataFrame.
     """
-#     features = {
-#             'vendor_id': input_data.vendor_id,
-#             'pickup_datetime': input_data.pickup_datetime,
-#             'passenger_count': input_data.passenger_count,
-#             'pickup_longitude': input_data.pickup_longitude,
-#             'pickup_latitude': input_data.pickup_latitude,
-#             'dropoff_longitude': input_data.dropoff_longitude,
-#             'dropoff_latitude': input_data.dropoff_latitude,
-#             'store_and_fwd_flag': input_data.store_and_fwd_flag
-# }
-#     features = pd.DataFrame(features, index=[0])
-    features = input_data.model_dump()
-    features = pd.DataFrame([features])
+
+    try:
+        """converting recieved input pydantic class to dataframe
+        """
+        # features = {
+        #         'vendor_id': input_data.vendor_id,
+        #         'pickup_datetime': input_data.pickup_datetime,
+        #         'passenger_count': input_data.passenger_count,
+        #         'pickup_longitude': input_data.pickup_longitude,
+        #         'pickup_latitude': input_data.pickup_latitude,
+        #         'dropoff_longitude': input_data.dropoff_longitude,
+        #         'dropoff_latitude': input_data.dropoff_latitude,
+        #         'store_and_fwd_flag': input_data.store_and_fwd_flag
+        # }
+        # features = pd.DataFrame(features, index=[0])
+
+        features = input_data.model_dump()
+        features = pd.DataFrame([features])
+        return features
+    except Exception as e:
+        infologger.info(f'Dataframe creation from input dictionary has been failed with error : {e}') 
+
     features = feature_build(features, 'prod')
-    prediction = model.predict(features)[0].item()
-    # Return the prediction
-    return {"prediction": prediction}
+    
+    try:
+        """function to make prediction and returns a predicted output"""
+        prediction = model.predict(features)[0].item()
+    except Exception as e:
+         infologger.info(f'Prediction has been failed because of error : {e}')
+    else:
+        return {"prediction": prediction}
 
 if __name__ == "__main__":
     import uvicorn

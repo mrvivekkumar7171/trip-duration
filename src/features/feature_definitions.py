@@ -1,6 +1,8 @@
-import pathlib
+import pathlib, sys
 import pandas as pd
 import numpy as np
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
+from logger import infologger
 
 
 def haversine_array(lat1, lng1, lat2, lng2):
@@ -51,16 +53,18 @@ def create_datetime_features(df):
     df.loc[:, 'pickup_week_hour'] = df['pickup_weekday'] * 24 + df['pickup_hour']
 
 def feature_build(df, tag):
-    """Build features for the given DataFrame."""
-    datetime_feature_fix(df)
-    create_dist_features(df)
-    create_datetime_features(df)
-    do_not_use_for_training = ['id', 'pickup_datetime', 'dropoff_datetime',
-                            'check_trip_duration', 'pickup_date', 'pickup_datetime_group']
-    feature_names = [f for f in df.columns if f not in do_not_use_for_training]
-    print(f'We have {len(feature_names)} features in {tag}.')
-    return df[feature_names]
-    
+    """Building necessary features required for prediction from a given DataFrame"""
+    try:
+        datetime_feature_fix(df)
+        create_dist_features(df)
+        create_datetime_features(df)
+        do_not_use_for_training = ['id', 'pickup_datetime', 'dropoff_datetime', 'check_trip_duration', 'pickup_date', 'pickup_datetime_group']
+        feature_names = [f for f in df.columns if f not in do_not_use_for_training]
+    except Exception as e:
+        infologger.info(f'Feature build has been failed with error : {e}')
+    else:
+        infologger.info(f'Features created successfully, We have {len(feature_names)} features in {tag}.')
+        return df[feature_names]
 
 if __name__ == '__main__':
     curr_dir = pathlib.Path(__file__)
