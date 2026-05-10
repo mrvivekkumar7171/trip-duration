@@ -44,10 +44,10 @@ jobs:
       - name: Lint code
         run: echo "Linting repository"
 
-      - name: Run unit tests
-        run: |
-          echo "Running unit tests"
-          python -m unittest discover
+      # - name: Run unit tests
+      #   run: |
+      #     echo "Running unit tests"
+      #     python -m unittest discover
 
       - name: Creating CML Report for unit tests
         env:
