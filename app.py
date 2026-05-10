@@ -1,10 +1,10 @@
 # To Run : python app.py
 from src.features.feature_definitions import feature_build
-from src.logger import infologger
 from pydantic import BaseModel
 from fastapi import FastAPI
 from joblib import load
 import pandas as pd
+from src.logger import infologger
 
 app = FastAPI()
 

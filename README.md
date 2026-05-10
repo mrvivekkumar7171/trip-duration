@@ -4,6 +4,16 @@
     <img src="https://img.shields.io/badge/CCDS-Project%20template-328F97?logo=cookiecutter" />
 </a>
 
+
+Things to Do:
+1. add more hyperparameters paramters for hyperopt
+2. correct the test_data.py for unitest
+3. correct the CLM report of unitet on github action's bot comment on PR
+5. model deployment on VM instance on GCP failed so correct it.
+4. update& structure the readme file
+5. update remaining code for download folder.
+6. model's output on api endpoint is not correct so correct it.
+
 **Trip Duration**
 A sample ML project to build an end-to-end working app for the NYC traxi trip duration challenge. A working setup demo is fully recorded.
 We are creating a service that will take a few specific inputs and prediction the trip duration. This will be hosted on internet and 

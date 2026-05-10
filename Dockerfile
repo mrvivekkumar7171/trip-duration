@@ -28,6 +28,9 @@ RUN adduser \
     --uid "${UID}" \
     appuser
 
+# Create the logs directory and give the appuser ownership of the /app directory
+RUN mkdir -p /app/logs && chown -R appuser:appuser /app
+
 # Switch to the non-privileged user to run the application.
 USER appuser
 
