@@ -13,14 +13,14 @@ class GCSPush:
         except Exception as e:
             infologger.info(f'Not able to Connect to GCS :  {e}')
 
-    def push(self, local_file_path, bucket_name, gcs_file_path):
+    def push(self, local_file_path, gcs_file_path, bucket_name):
         """Get the bucket, create a blob (the object that will store your file in GCS) and upload the file.
         """
         try:
             bucket = self.client.bucket(bucket_name)
             blob = bucket.blob(gcs_file_path)
             blob.upload_from_filename(local_file_path)
-            # print(f"File uploaded successfully to {bucket_name}/{gcs_file_path}\n")
+            infologger.info(f"File uploaded successfully to {bucket_name}/{gcs_file_path}\n")
             
         except FileNotFoundError:
             infologger.info(f"The file {local_file_path} was not found.")
@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
     try:
         gcs = GCSPush()
-        gcs.push(model_path_str, gcs_bucket_name, model_output_path)
+        gcs.push(model_path_str, model_output_path, gcs_bucket_name)
     except Exception as e:
         infologger.info(f'Failed in pushing a model to GCS :  {e}')
     else:

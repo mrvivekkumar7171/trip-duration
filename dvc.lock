@@ -48,7 +48,7 @@ stages:
         train_model.train_seed: 222
         train_model.train_size: 0.001
   push_model:
-    cmd: python .\src\models\push_model.py .\models\model.joblib models\model.joblib
+    cmd: python .\src\models\push_model.py .\models\model.joblib models/model.joblib
       trip-duration-dvc-storages
     deps:
     - path: .\models\model.joblib
@@ -57,8 +57,8 @@ stages:
       size: 70256
     - path: .\src\models\push_model.py
       hash: md5
-      md5: 0a604068502d8a32cf721195d400c156
-      size: 1816
+      md5: c257b40cde3292c638481f4611f41d4a
+      size: 1824
     - path: .\src\visualization\visualize.py
       hash: md5
       md5: 63657f56ccbf4b26b1efebe5a60cb98e

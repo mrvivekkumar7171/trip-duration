@@ -55,7 +55,7 @@ stages:
     - visualize.target
   
   push_model:
-    cmd: python .\src\models\push_model.py .\models\model.joblib models\model.joblib trip-duration-dvc-storages
+    cmd: python .\src\models\push_model.py .\models\model.joblib models/model.joblib trip-duration-dvc-storages
     deps:
     - .\src\visualization\visualize.py
     - .\src\models\push_model.py
