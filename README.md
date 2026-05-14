@@ -13,6 +13,7 @@ Things to Do:
 4. update& structure the readme file
 5. update remaining code for download folder.
 6. model's output on api endpoint is not correct so correct it.
+7. Test in ML lifecycle done at two place one in feature test in ci and model performance, probability and target distribution test in cd.
 
 **Trip Duration**
 A sample ML project to build an end-to-end working app for the NYC traxi trip duration challenge. A working setup demo is fully recorded.

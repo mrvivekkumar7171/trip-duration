@@ -1,6 +1,6 @@
 name: CI/CT Pipeline
 
-# perform the below jobs on push to the repository.
+# perform the below CI/CT jobs automatically whenever a new Git commit is pushed on master branch of the repository.
 on:
   push:
     branches:

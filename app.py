@@ -1,7 +1,7 @@
 # To Run : python app.py
 from src.features.feature_definitions import feature_build
+from fastapi import FastAPI, status
 from pydantic import BaseModel
-from fastapi import FastAPI
 from joblib import load
 import pandas as pd
 from src.logger import infologger
@@ -32,6 +32,13 @@ else:
 @app.get("/")
 def home():
     return "Working fine"
+
+@app.get("/health", status_code=status.HTTP_200_OK)
+def health_check():
+    """
+    Health check endpoint to verify that the application is up and running.
+    """
+    return {"status": "healthy"}
 
 @app.post("/predict")
 def predict(input_data: PredictionInput):

@@ -34,8 +34,7 @@ def datetime_feature_fix(df):
     """Fix the datetime features in the DataFrame."""
     df['pickup_datetime'] = pd.to_datetime(df.pickup_datetime)
     df.loc[:, 'pickup_date'] = df['pickup_datetime'].dt.date
-    df['store_and_fwd_flag'] = 1 * (df.store_and_fwd_flag.values == 'Y')
-
+    df['store_and_fwd_flag'] = (df['store_and_fwd_flag'] == 'Y').astype(int)
 
 def create_dist_features(df):
     """Create distance features in the DataFrame."""

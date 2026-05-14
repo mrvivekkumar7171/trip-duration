@@ -1,0 +1,67 @@
+# ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ml-config
+data:
+  hyperparam1: "value1"
+  hyperparam2: "value2"
+---
+# Main Machine Learning App Deployment & Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trip-duration
+spec:
+  replicas: 3 # Number of desired pods
+  selector:
+    matchLabels:
+      app: trip-duration
+  template:
+    metadata:
+      labels:
+        app: trip-duration
+    spec:
+      containers:
+      - name: trip-duration
+        image: trip-duration-docker-image-hub/trip-duration:latest
+        ports:
+        - containerPort: 8080 # The port your app listens on
+        readinessProbe:
+          httpGet:
+            path: /health # Your app needs a route that returns HTTP 200 when ready
+            port: 8080
+          initialDelaySeconds: 30 # Wait 30 seconds before checking
+          periodSeconds: 300 # Check every 5 minutes    
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 300
+        envFrom:
+        - configMapRef:
+            name: ml-config 
+        # env: # Pointing the app to the new Redis service
+        # - name: REDIS_HOST
+        #   value: "redis-service"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi" # Memory limit 1024 means 1GB
+            cpu: "500m" # CPU limit 1000m means 1 CPU cores
+---
+# Service to expose the trip-duration app
+apiVersion: v1
+kind: Service
+metadata:
+  name: trip-duration
+spec:
+  selector:
+    app: trip-duration
+  ports:
+    - protocol: TCP
+      port: 1234 # The port you want to expose for external access
+      targetPort: 8080 # The port your app listens on
