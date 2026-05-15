@@ -1,4 +1,7 @@
-# make_dataset.py
+"""
+    take data from data/raw and perform preprocessing and save the preprocessed data in data/processed like
+    train_processed.csv and test_processed.csv
+"""
 from sklearn.model_selection import train_test_split
 import pathlib, yaml, sys, click, random
 from src.logger import infologger

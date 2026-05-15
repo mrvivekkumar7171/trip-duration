@@ -44,6 +44,10 @@ jobs:
       - name: Lint code
         run: echo "Linting repository"
 
+      # - name: Download model from GCS
+      #   run: |
+      #     gcloud storage cp gs://trip-duration-dvc-storages/models/model.joblib ./models/model.joblib
+
       # - name: Run unit tests
       #   run: |
       #     echo "Running unit tests"
@@ -58,3 +62,56 @@ jobs:
           echo "## Bar Plots" >> report.md
           echo '![](./metrices_bars.png "Bar plot")' >> report.md
           cml comment create report.md
+
+      # - name: Notify on Slack about CI results
+      #   if : always()
+      #   uses: actions/slack@v2
+      #   with:
+      #     status: ${{ job.status }}
+      #     fields: repo, commit, author
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  Build-and-Push-Docker-Image:
+    name: Build and Push Docker Image # to Artifact Registry (GCP)
+    needs: Continuous-Integration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code from Repository
+        uses: actions/checkout@v5
+
+      - name: Install Utilities
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq unzip
+      
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Set up Cloud SDK
+        id: login-ecr
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker --quiet ${{ secrets.GCP_REGION }}-docker.pkg.dev
+
+      - name: Download model from GCS
+        run: |
+          gcloud storage cp gs://trip-duration-dvc-storages/models/model.joblib ./models/model.joblib
+
+      - name: Build, tag, and push a Docker image to Artifact Registry
+        id: build-image
+        env:
+          IMAGE_NAME: trip-duration
+          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          REGION: ${{ secrets.GCP_REGION }}
+          REPO_NAME: ${{ secrets.GCP_AR_REPO_NAME }}
+        run: |
+          IMAGE_URI=$REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:latest
+          
+          docker build -t $IMAGE_URI .
+          docker push $IMAGE_URI
+          echo "image=$IMAGE_URI" >> $GITHUB_OUTPUT

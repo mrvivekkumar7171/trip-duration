@@ -1,4 +1,4 @@
-make_dataset:
+data_preprocessing:
   test_split: 0.25
   seed: 2023
   trip_duration_lowlimit: 10

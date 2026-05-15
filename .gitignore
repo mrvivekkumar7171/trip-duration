@@ -91,9 +91,7 @@ target/
 .aws/*
 
 # DVC pipelines output that are tracked by DVC but not needed in Git
-/data
 /mlruns
-/models
 /dvclive
 mlflow.db
 /metrics_output
@@ -103,3 +101,4 @@ mlflow.db
 .vscode/
 .env
 .ipynb_checkpoints/
+/models

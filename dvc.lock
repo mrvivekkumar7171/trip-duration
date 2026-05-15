@@ -3,11 +3,6 @@ stages:
   build_features:
     cmd: python .\src\features\build_features.py .\data\raw\ .\data\processed\
     deps:
-    - path: .\data\processed\
-      hash: md5
-      md5: fcf68ca89b30e31713e10172cfa9513c.dir
-      size: 335293872
-      nfiles: 3
     - path: .\data\raw\
       hash: md5
       md5: 775bd993f722629b752d2bdee167a7a2.dir
@@ -17,23 +12,20 @@ stages:
       hash: md5
       md5: 68363b6e4c8d9c419ad39c641a968015
       size: 1142
+    outs:
+    - path: .\data\processed\
+      hash: md5
+      md5: 289218f44063eb56340295dad548ce11.dir
+      size: 335293872
+      nfiles: 2
   train_model:
     cmd: python .\src\models\train_model.py .\data\processed\ .\models\
     deps:
     - path: .\data\processed\
       hash: md5
-      md5: fcf68ca89b30e31713e10172cfa9513c.dir
+      md5: 289218f44063eb56340295dad548ce11.dir
       size: 335293872
-      nfiles: 3
-    - path: .\models\
-      hash: md5
-      md5: ba4a20e82012b744360598764e913ad4.dir
-      size: 70256
-      nfiles: 1
-    - path: .\src\features\build_features.py
-      hash: md5
-      md5: 68363b6e4c8d9c419ad39c641a968015
-      size: 1142
+      nfiles: 2
     - path: .\src\models\train_model.py
       hash: md5
       md5: c11c5c8c039e36e28f8b7cb1f56edf85
@@ -47,39 +39,34 @@ stages:
         train_model.test_size: 0.2
         train_model.train_seed: 222
         train_model.train_size: 0.001
+    outs:
+    - path: .\models\
+      hash: md5
+      md5: e485febf03cae4e8836aa8061d96232f.dir
+      size: 70400
+      nfiles: 1
   push_model:
     cmd: python .\src\models\push_model.py .\models\model.joblib models/model.joblib
       trip-duration-dvc-storages
     deps:
-    - path: .\models\model.joblib
+    - path: .\models\
       hash: md5
-      md5: 0141925b6c3f7e2a782a821f7775ab3d
-      size: 70256
+      md5: e485febf03cae4e8836aa8061d96232f.dir
+      size: 70400
+      nfiles: 1
     - path: .\src\models\push_model.py
       hash: md5
       md5: c257b40cde3292c638481f4611f41d4a
       size: 1824
-    - path: .\src\visualization\visualize.py
-      hash: md5
-      md5: 63657f56ccbf4b26b1efebe5a60cb98e
-      size: 3183
   visualize:
     cmd: python .\src\visualization\visualize.py .\models\model.joblib .\data\processed\
       .\metrics_output\
     deps:
-    - path: .\data\processed\
+    - path: .\models\
       hash: md5
-      md5: fcf68ca89b30e31713e10172cfa9513c.dir
-      size: 335293872
-      nfiles: 3
-    - path: .\models\model.joblib
-      hash: md5
-      md5: 0141925b6c3f7e2a782a821f7775ab3d
-      size: 70256
-    - path: .\src\models\train_model.py
-      hash: md5
-      md5: c11c5c8c039e36e28f8b7cb1f56edf85
-      size: 6590
+      md5: e485febf03cae4e8836aa8061d96232f.dir
+      size: 70400
+      nfiles: 1
     - path: .\src\visualization\visualize.py
       hash: md5
       md5: 63657f56ccbf4b26b1efebe5a60cb98e
