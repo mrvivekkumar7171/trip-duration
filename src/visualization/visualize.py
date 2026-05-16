@@ -1,10 +1,13 @@
 from sklearn.model_selection import train_test_split
 import sys, pathlib, joblib, mlflow, yaml
 import matplotlib.pyplot as plt
-from sklearn import metrics
+from sklearn.metrics import precision_score, recall_score, roc_auc_score, accuracy_score, mean_squared_error, r2_score, average_precision_score, ConfusionMatrixDisplay
 import pandas as pd
 
-def save_importance_plot(model, feature_names, output_dir):
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
+from src.logger import logger
+
+def save_importance_plot(model : object, feature_names : list, output_dir : str) -> None:
     """Save feature importance plot ONLY if the model supports it."""
     if not hasattr(model, 'feature_importances_'):
         return
@@ -21,7 +24,7 @@ def save_importance_plot(model, feature_names, output_dir):
     fig.savefig(plot_path, bbox_inches='tight')
     mlflow.log_artifact(plot_path.as_posix())
 
-def main():
+def main() -> None:
 
     curr_dir = pathlib.Path(__file__)
     home_dir = curr_dir.parent.parent.parent
@@ -39,11 +42,9 @@ def main():
     TARGET = params['target']
 
     model = joblib.load(model_file)
-    train_df = pd.read_csv(data_path / 'train.csv')
-    X = train_df.drop(TARGET, axis=1)
-    y = train_df[TARGET]
-
-    _, X_test, _, y_test = train_test_split(X, y, test_size=0.20, random_state=222)
+    train_df = pd.read_csv(data_path / 'test_processed.csv')
+    X_test = train_df.drop(TARGET, axis=1)
+    y_test = train_df[TARGET]
 
     y_pred = model.predict(X_test)
     is_classification = params['classification']
@@ -51,7 +52,7 @@ def main():
     # Log to MLflow
     with mlflow.start_run(run_name="Evaluate_Final_Model"):
         if is_classification:
-            mlflow.log_metric("test_accuracy", metrics.accuracy_score(y_test, y_pred))
+            mlflow.log_metric("test_accuracy", accuracy_score(y_test, y_pred))
             
             # Add back ROC AUC and Average Precision (requires probabilities)
             if hasattr(model, "predict_proba"):
@@ -59,19 +60,21 @@ def main():
                 # Assuming binary classification based on your original code
                 if y_prob.shape[1] == 2:
                     y_prob_pos = y_prob[:, 1]
-                    mlflow.log_metric("roc_auc", metrics.roc_auc_score(y_test, y_prob_pos))
-                    mlflow.log_metric("avg_prec", metrics.average_precision_score(y_test, y_prob_pos))
+                    mlflow.log_metric("roc_auc_score", roc_auc_score(y_test, y_prob_pos))
+                    mlflow.log_metric("average_precision_score", average_precision_score(y_test, y_prob_pos))
+                    mlflow.log_metric("precision_score", precision_score(y_test, y_pred))
+                    mlflow.log_metric("recall_score", recall_score(y_test, y_pred))
 
             # Confusion Matrix Plot
             fig, ax = plt.subplots()
-            metrics.ConfusionMatrixDisplay.from_predictions(y_test, y_pred, ax=ax)
+            ConfusionMatrixDisplay.from_predictions(y_test, y_pred, ax=ax)
             cm_path = output_dir / "confusion_matrix.png"
             fig.savefig(cm_path, bbox_inches='tight')
             mlflow.log_artifact(cm_path.as_posix())
             
         else:
-            rmse = metrics.mean_squared_error(y_test, y_pred) ** 0.5
-            r2 = metrics.r2_score(y_test, y_pred)
+            rmse = mean_squared_error(y_test, y_pred) ** 0.5
+            r2 = r2_score(y_test, y_pred)
             mlflow.log_metrics({"test_rmse": rmse, "test_r2": r2})
 
         # Feature Importance

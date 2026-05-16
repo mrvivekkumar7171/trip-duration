@@ -1,6 +1,7 @@
-data_preprocessing:
-  test_split: 0.25
+data_ingestion:
+  test_split: 0.30
   seed: 2023
+data_preprocessing:
   trip_duration_lowlimit: 10
   trip_duration_uplimit: 30000
   pickup_latitude_lowlimit: 40.637044
@@ -12,8 +13,6 @@ data_preprocessing:
   dropoff_longitude_lowlimit: -74.035735
   dropoff_longitude_uplimit: -73.770272
 train_model:
-  test_seed: 108
-  test_size: 0.20
   train_seed: 222
   train_size: 0.001
   max_evals: 50

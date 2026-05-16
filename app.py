@@ -4,7 +4,7 @@ from fastapi import FastAPI, status
 from pydantic import BaseModel
 from joblib import load
 import pandas as pd
-from src.logger import infologger
+from src.logger import logger
 
 app = FastAPI()
 
@@ -25,9 +25,10 @@ try:
     model_path = "models/model.joblib"
     model = load(model_path)
 except Exception as e:
-    infologger.info(f'Model loading has been failed with error : {e}')
+    logger.error('Model loading has been failed.')
+    raise e
 else:
-    infologger.info('Model loaded successfully')
+    logger.info('Model loaded successfully')
 
 @app.get("/")
 def home():
@@ -64,9 +65,9 @@ def predict(input_data: PredictionInput):
 
         features = input_data.model_dump()
         features = pd.DataFrame([features])
-        return features
     except Exception as e:
-        infologger.info(f'Dataframe creation from input dictionary has been failed with error : {e}') 
+        logger.error('Dataframe creation from input dictionary has been failed')
+        raise e
 
     features = feature_build(features, 'prod')
     
@@ -74,7 +75,8 @@ def predict(input_data: PredictionInput):
         """function to make prediction and returns a predicted output"""
         prediction = model.predict(features)[0].item()
     except Exception as e:
-         infologger.info(f'Prediction has been failed because of error : {e}')
+         logger.error('Prediction has been failed')
+         raise e
     else:
         return {"prediction": prediction}
 

@@ -2,10 +2,10 @@ import pathlib, sys
 import pandas as pd
 import numpy as np
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-from logger import infologger
+from logger import logger
 
 
-def haversine_array(lat1, lng1, lat2, lng2):
+def haversine_array(lat1 : np.ndarray, lng1 : np.ndarray, lat2 : np.ndarray, lng2 : np.ndarray) -> np.ndarray:
     """Calculate the great circle distance in kilometers between two points on the Earth specified in decimal degrees."""
     lat1, lng1, lat2, lng2 = map(np.radians, (lat1, lng1, lat2, lng2))
     AVG_EARTH_RADIUS = 6371  # in km
@@ -15,13 +15,13 @@ def haversine_array(lat1, lng1, lat2, lng2):
     h = 2 * AVG_EARTH_RADIUS * np.arcsin(np.sqrt(d))
     return h
 
-def dummy_manhattan_distance(lat1, lng1, lat2, lng2):
+def dummy_manhattan_distance(lat1 : np.ndarray, lng1 : np.ndarray, lat2 : np.ndarray, lng2 : np.ndarray) -> np.ndarray:
     """Calculate the Manhattan distance in kilometers between two points."""
     a = haversine_array(lat1, lng1, lat1, lng2)
     b = haversine_array(lat1, lng1, lat2, lng1)
     return a + b
 
-def bearing_array(lat1, lng1, lat2, lng2):
+def bearing_array(lat1 : np.ndarray, lng1 : np.ndarray, lat2 : np.ndarray, lng2 : np.ndarray) -> np.ndarray:
     """Calculate the bearing in degrees between two points on the Earth specified in decimal degrees."""
     AVG_EARTH_RADIUS = 6371  # in km
     lng_delta_rad = np.radians(lng2 - lng1)
@@ -30,20 +30,19 @@ def bearing_array(lat1, lng1, lat2, lng2):
     x = np.cos(lat1) * np.sin(lat2) - np.sin(lat1) * np.cos(lat2) * np.cos(lng_delta_rad)
     return np.degrees(np.arctan2(y, x))
 
-def datetime_feature_fix(df):
+def datetime_feature_fix(df: pd.DataFrame) -> None:
     """Fix the datetime features in the DataFrame."""
     df['pickup_datetime'] = pd.to_datetime(df.pickup_datetime)
     df.loc[:, 'pickup_date'] = df['pickup_datetime'].dt.date
     df['store_and_fwd_flag'] = (df['store_and_fwd_flag'] == 'Y').astype(int)
 
-def create_dist_features(df):
+def create_dist_features(df: pd.DataFrame) -> None:
     """Create distance features in the DataFrame."""
     df.loc[:, 'distance_haversine'] = haversine_array(df['pickup_latitude'].values, df['pickup_longitude'].values, df['dropoff_latitude'].values, df['dropoff_longitude'].values)
     df.loc[:, 'distance_dummy_manhattan'] = dummy_manhattan_distance(df['pickup_latitude'].values, df['pickup_longitude'].values, df['dropoff_latitude'].values, df['dropoff_longitude'].values)
     df.loc[:, 'direction'] = bearing_array(df['pickup_latitude'].values, df['pickup_longitude'].values, df['dropoff_latitude'].values, df['dropoff_longitude'].values)
-    
 
-def create_datetime_features(df):
+def create_datetime_features(df: pd.DataFrame) -> None:
     """Create datetime features in the DataFrame."""
     df.loc[:, 'pickup_weekday'] = df['pickup_datetime'].dt.weekday
     df.loc[:, 'pickup_hour'] = df['pickup_datetime'].dt.hour
@@ -51,7 +50,7 @@ def create_datetime_features(df):
     df.loc[:, 'pickup_dt'] = (df['pickup_datetime'] - df['pickup_datetime'].min()).dt.total_seconds()
     df.loc[:, 'pickup_week_hour'] = df['pickup_weekday'] * 24 + df['pickup_hour']
 
-def feature_build(df, tag):
+def feature_build(df: pd.DataFrame, tag: str) -> pd.DataFrame:
     """Building necessary features required for prediction from a given DataFrame"""
     try:
         datetime_feature_fix(df)
@@ -60,9 +59,10 @@ def feature_build(df, tag):
         do_not_use_for_training = ['id', 'pickup_datetime', 'dropoff_datetime', 'check_trip_duration', 'pickup_date', 'pickup_datetime_group']
         feature_names = [f for f in df.columns if f not in do_not_use_for_training]
     except Exception as e:
-        infologger.info(f'Feature build has been failed with error : {e}')
+        logger.error('Feature build has been failed')
+        raise e
     else:
-        infologger.info(f'Features created successfully, We have {len(feature_names)} features in {tag}.')
+        logger.info(f'Features created successfully, We have {len(feature_names)} features in {tag}.')
         return df[feature_names]
 
 if __name__ == '__main__':
@@ -72,5 +72,4 @@ if __name__ == '__main__':
     data_path_str = data_path.as_posix()
 
     data = pd.read_csv(data_path_str, nrows=10)
-    feature_build(data, 'test')
-    print(data.head())
+    data = feature_build(data, 'test')

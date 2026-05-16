@@ -1,55 +1,20 @@
-## trip-duration
+## [Trip Duration](https://www.kaggle.com/competitions/nyc-taxi-trip-duration)
 
-<a target="_blank" href="https://cookiecutter-data-science.drivendata.org/">
-    <img src="https://img.shields.io/badge/CCDS-Project%20template-328F97?logo=cookiecutter" />
-</a>
+A sample ML project to build an end-to-end working ml model and serving the model via an app for the NYC traxi trip duration challenge. It takes a few specific inputs and prediction the trip duration.
 
-
-Things to Do:
-1. add more hyperparameters paramters for hyperopt
-2. correct the test_data.py for unitest
-3. correct the CLM report of unitet on github action's bot comment on PR
-5. model deployment on VM instance on GCP failed so correct it.
-4. update& structure the readme file
-5. update remaining code for download folder.
-6. model's output on api endpoint is not correct so correct it.
-7. Test in ML lifecycle done at two place one in feature test in ci and model performance, probability and target distribution test in cd.
-
-**Trip Duration**
-A sample ML project to build an end-to-end working app for the NYC traxi trip duration challenge. A working setup demo is fully recorded.
-We are creating a service that will take a few specific inputs and prediction the trip duration. This will be hosted on internet and 
-User will hit the url with data and the endpoint will return the trip duration after model inference/prediction.
-https://www.kaggle.com/competitions/nyc-taxi-trip-duration/data
-
-Steps:
-1. create the project using ccds
-2. collect the data & add data in raw folder & write connectors to access data globally
-3. Initialize the git & dvc & connect to GCP cloud as remote storage
-4. track the data raw & model folder
-5. EDA on notebook
-6. write modules code in src folder
-7. add code to create the app.py
-8. create stages to run with dvc
-9. Create a brach for the best model
-10. connect GCP storage with github
-11. create a self-hosted runner on GCP
-12. Use CI with specific best model branch
-13. CI (Setup-code, python, dvc, run pipeline, model and data access, Report via CML on model matrix, docker/containerize the image and push to AWS ECR/Docker Hub)
-14. Merge best model branch with main
-15. Deploy best model on EC2 via the app.py
-
-NOTE: Make sure data related changes are tracked and commit to git and push correctly.
-
-Trip Duration Prediction Project with end-to-end mlops
-
-
-This project need three paid services for AWS or GCP.
+#### This project need three paid services of AWS or GCP:
 1. Storage: S3 or GCS for data and model storage remote using dvc pipeline
 2. Compute: EC2 or GCP compute engine for hosting the app and self-hosted runner for CD only
 3. Container registry: AWS ECR or GCP Artifact registry for storing the docker image of the app for CD
 
+#### Upcoming Features:
+1. correct the test_data.py for unitest
+2. correct the CLM report of unitet on github action's bot comment on PR
+3. update remaining code for download folder.
+4. Test in ML lifecycle done at two place one in feature test in ci and model performance, probability and target distribution test in cd.
+
 ## Project Organization
-------------
+
 
     ├── LICENSE
     ├── Makefile           <- Makefile with commands like `make data` or `make train`
@@ -98,5 +63,3 @@ This project need three paid services for AWS or GCP.
 
 
 --------
-
-<p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>

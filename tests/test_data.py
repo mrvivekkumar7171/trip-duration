@@ -1,7 +1,7 @@
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from src.features.feature_definitions import feature_build
 from src.features.build_features import BuildFeatures
-from src.logger import infologger
+from src.logger import logger
 import unittest, os, pickle, yaml
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -24,7 +24,8 @@ class TestDemo(unittest.TestCase):
             s3.download_file(Bucket="nyctrip-bucket", Key="test_bestmodel.pkl", Filename="test_bestmodel.pkl")
             s3.download_file(Bucket="nyctrip-bucket", Key="loc_kmeans.pkl", Filename="loc_kmeans.pkl")
         except Exception as e:
-            infologger.info(f'Not able to Connect to S3 :  {e}')
+            logger.error('Not able to Connect to S3')
+            raise e
         else:
             self.df = pd.read_csv("validate_data.csv")
 
@@ -78,13 +79,12 @@ class TestDemo(unittest.TestCase):
             plt.xticks(rotation = 'vertical')
             plt.savefig('metrices_bars.png')
             plt.close(fig) # Good practice to close figures in tests
-            print(f"Image saved successfully at: {os.path.abspath('metrices_bars.png')}")
+            logger.info(f"Image saved successfully at: {os.path.abspath('metrices_bars.png')}")
         except Exception as e:
-            self.message = 'Error in plotting and predicting : ' + str(e)
-            infologger.info(self.message)
+            logger.error('Error in plotting and predicting')
+            raise e
         else:
-            self.message = 'Plotted successful'
-            infologger.info(self.message)
+            logger.info('Plotted successful')
 
 if __name__ == '__main__':
     unittest.main()

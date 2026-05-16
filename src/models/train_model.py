@@ -12,14 +12,18 @@ from lazypredict.Supervised import LazyClassifier, LazyRegressor, CLASSIFIERS, R
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import mean_squared_error, accuracy_score
 from hyperopt import fmin, tpe, Trials, STATUS_OK, space_eval
-from hyperparameters import get_search_space
 import pathlib, sys, joblib, mlflow, warnings, yaml
+
+from hyperparameters import get_search_space
 import mlflow.sklearn
 import pandas as pd
 
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
+from src.logger import logger
+
 warnings.filterwarnings('ignore')
 
-def find_best_model_with_params(X_train, y_train, X_tune, y_tune, X_test, y_test, is_classification, max_evals):
+def find_best_model_with_params(X_train : pd.DataFrame, y_train : pd.Series, X_tune : pd.DataFrame, y_tune : pd.Series, X_test : pd.DataFrame, y_test : pd.Series, is_classification : bool, max_evals : int) -> object:
     """Find Best Model with LazyPredict and then tune it with Hyperopt"""
     
     if is_classification:
@@ -31,15 +35,14 @@ def find_best_model_with_params(X_train, y_train, X_tune, y_tune, X_test, y_test
         models, predictions = clf.fit(X_tune, X_test, y_tune, y_test)
         model_dict = dict(REGRESSORS)
 
-    # Print the top 3 models, get the name of the best model and create actual model class of it.
     best_model_name = models.index[0]
     BestModelClass = model_dict[best_model_name]
-    print(f"\nTop 3 Models:\n{models.head(3)}")
+    logger.info(f"Top 3 Models:\n{models.head(3)}")
 
     space = get_search_space(best_model_name)
 
     if not space:
-        print(f"No search space defined for {best_model_name}. Training with default parameters.")
+        logger.info(f"No search space defined for {best_model_name}. Training with default parameters.")
         
         with mlflow.start_run(run_name=f'{best_model_name} Final Model'):
             model = BestModelClass() # Initialize with defaults
@@ -56,9 +59,9 @@ def find_best_model_with_params(X_train, y_train, X_tune, y_tune, X_test, y_test
         return model
         
     else:
-        print(f"\nStarting Hyperopt tuning for {best_model_name}...")
+        logger.info(f"Starting Hyperopt tuning for {best_model_name}")
 
-        def objective(params_in):
+        def objective(params_in : dict) -> dict:
             """Objective function for Hyperopt to minimize the loss metric"""
             if 'max_depth' in params_in and params_in['max_depth'] is not None: params_in['max_depth']=int(params_in['max_depth'])
             if 'min_child_weight' in params_in: params_in['min_child_weight']=int(params_in['min_child_weight']) 
@@ -108,11 +111,11 @@ def find_best_model_with_params(X_train, y_train, X_tune, y_tune, X_test, y_test
             
         return model
 
-def save_model(model, output_path):
+def save_model(model : object, output_path : str) -> None:
     # Save the trained model to the specified output path
     joblib.dump(model, output_path + "/model.joblib")
 
-def main():
+def main() -> None:
     curr_dir = pathlib.Path(__file__)
     home_dir = curr_dir.parent.parent.parent
     params_file = home_dir.as_posix() + '/params.yaml'
@@ -127,18 +130,19 @@ def main():
     mlflow.set_experiment("Experiment_Trip_Duration_Prediction")
     TARGET = params['target']
 
-    train_features = pd.read_csv(data_path_str + "/train.csv")
-    X = train_features.drop(TARGET, axis=1)
-    y = train_features[TARGET]
-    
+    train_features = pd.read_csv(data_path_str + "/train_processed.csv")
+    X_train = train_features.drop(TARGET, axis=1)
+    y_train = train_features[TARGET]
+
+    test_features = pd.read_csv(data_path_str + "/test_processed.csv")
+    X_test = test_features.drop(TARGET, axis=1)
+    y_test = test_features[TARGET]
+
     is_classification = params['classification']
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=params['test_size'], random_state=params['test_seed'])
     X_tune, _, y_tune, _ = train_test_split(X_train, y_train, train_size=params['train_size'], random_state=params['train_seed'])
     trained_model = find_best_model_with_params(X_train, y_train, X_tune, y_tune, X_test, y_test, is_classification, params['max_evals'])
     save_model(trained_model, output_path_str)
-    # print(f"Model successfully saved in '{output_path_str}'.")
-
 
 if __name__ == "__main__":
     main()

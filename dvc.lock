@@ -1,49 +1,47 @@
 schema: '2.0'
 stages:
   build_features:
-    cmd: python .\src\features\build_features.py .\data\raw\ .\data\processed\
+    cmd: python .\src\features\build_features.py .\data\interim\ .\data\processed\
     deps:
-    - path: .\data\raw\
+    - path: .\data\interim\
       hash: md5
-      md5: 775bd993f722629b752d2bdee167a7a2.dir
-      size: 271383386
+      md5: 939baa00f1453c7a3bd89c81e1946fab.dir
+      size: 193882921
       nfiles: 3
     - path: .\src\features\build_features.py
       hash: md5
-      md5: 68363b6e4c8d9c419ad39c641a968015
-      size: 1142
+      md5: f476921681bf2ae1450063c7938d5811
+      size: 1607
     outs:
     - path: .\data\processed\
       hash: md5
-      md5: 289218f44063eb56340295dad548ce11.dir
-      size: 335293872
-      nfiles: 2
+      md5: 13d90319fa4994c7b2bf76607814d621.dir
+      size: 232883394
+      nfiles: 3
   train_model:
     cmd: python .\src\models\train_model.py .\data\processed\ .\models\
     deps:
     - path: .\data\processed\
       hash: md5
-      md5: 289218f44063eb56340295dad548ce11.dir
-      size: 335293872
-      nfiles: 2
+      md5: 13d90319fa4994c7b2bf76607814d621.dir
+      size: 232883394
+      nfiles: 3
     - path: .\src\models\train_model.py
       hash: md5
-      md5: c11c5c8c039e36e28f8b7cb1f56edf85
-      size: 6590
+      md5: 667649845c8b1c2f72ebd17d6047200f
+      size: 6878
     params:
       params.yaml:
         train_model.classification: false
         train_model.max_evals: 50
         train_model.target: trip_duration
-        train_model.test_seed: 108
-        train_model.test_size: 0.2
         train_model.train_seed: 222
         train_model.train_size: 0.001
     outs:
     - path: .\models\
       hash: md5
-      md5: e485febf03cae4e8836aa8061d96232f.dir
-      size: 70400
+      md5: 521c06303054ed588ab9269e6a33e05f.dir
+      size: 6002746
       nfiles: 1
   push_model:
     cmd: python .\src\models\push_model.py .\models\model.joblib models/model.joblib
@@ -51,27 +49,72 @@ stages:
     deps:
     - path: .\models\
       hash: md5
-      md5: e485febf03cae4e8836aa8061d96232f.dir
-      size: 70400
+      md5: 521c06303054ed588ab9269e6a33e05f.dir
+      size: 6002746
       nfiles: 1
     - path: .\src\models\push_model.py
       hash: md5
-      md5: c257b40cde3292c638481f4611f41d4a
-      size: 1824
+      md5: 2164736c0a18cdb5ab607597304067f2
+      size: 1938
   visualize:
     cmd: python .\src\visualization\visualize.py .\models\model.joblib .\data\processed\
-      .\metrics_output\
+      .\reports\figures\
     deps:
     - path: .\models\
       hash: md5
-      md5: e485febf03cae4e8836aa8061d96232f.dir
-      size: 70400
+      md5: 521c06303054ed588ab9269e6a33e05f.dir
+      size: 6002746
       nfiles: 1
     - path: .\src\visualization\visualize.py
       hash: md5
-      md5: 63657f56ccbf4b26b1efebe5a60cb98e
-      size: 3183
+      md5: d3548822f7942c150da1f195b471d6ad
+      size: 3542
     params:
       params.yaml:
         visualize.classification: false
         visualize.target: trip_duration
+  data_ingestion:
+    cmd: python .\src\data\data_ingestion.py nyc-taxi-trip-duration .\data\raw\
+    deps:
+    - path: .\src\data\data_ingestion.py
+      hash: md5
+      md5: 2cca37e24297315c11d2df88689a3b69
+      size: 5749
+    params:
+      params.yaml:
+        data_ingestion.seed: 2023
+        data_ingestion.test_split: 0.3
+    outs:
+    - path: .\data\raw\
+      hash: md5
+      md5: dd2808856bbf16bc3527f5752558fa6c.dir
+      size: 266262150
+      nfiles: 4
+  data_preprocessing:
+    cmd: python .\src\data\data_preprocessing.py .\data\raw\ .\data\interim\
+    deps:
+    - path: .\data\raw\
+      hash: md5
+      md5: dd2808856bbf16bc3527f5752558fa6c.dir
+      size: 266262150
+      nfiles: 4
+    - path: .\src\data\data_preprocessing.py
+      hash: md5
+      md5: 5fed582b6483cd23d4ffa0b902fabdf9
+      size: 7454
+    params:
+      params.yaml:
+        data_preprocessing.dropoff_latitude_lowlimit: 40.637044
+        data_preprocessing.dropoff_latitude_uplimit: 40.855256
+        data_preprocessing.dropoff_longitude_lowlimit: -74.035735
+        data_preprocessing.dropoff_longitude_uplimit: -73.770272
+        data_preprocessing.pickup_latitude_lowlimit: 40.637044
+        data_preprocessing.pickup_latitude_uplimit: 40.855256
+        data_preprocessing.pickup_longitude_lowlimit: -74.035735
+        data_preprocessing.pickup_longitude_uplimit: -73.770272
+    outs:
+    - path: .\data\interim\
+      hash: md5
+      md5: 939baa00f1453c7a3bd89c81e1946fab.dir
+      size: 193882921
+      nfiles: 3

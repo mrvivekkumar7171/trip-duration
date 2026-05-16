@@ -1,29 +1,36 @@
 stages:
-  # data_preprocessing:
-  #   cmd: python .\src\data_preprocessing.py .\data\raw\trip_duration.csv .\data\processed\
-  #   deps:
-  #   - .\src\data_preprocessing.py
-  #   - .\data\raw\trip_duration.csv
-  #   - .\data\processed\
-  #   params:
-  #   - data_preprocessing.test_split
-  #   - data_preprocessing.seed
-  #   - data_preprocessing.pickup_latitude_lowlimit
-  #   - data_preprocessing.pickup_latitude_uplimit
-  #   - data_preprocessing.pickup_longitude_lowlimit
-  #   - data_preprocessing.pickup_longitude_uplimit
-  #   - data_preprocessing.dropoff_latitude_lowlimit
-  #   - data_preprocessing.dropoff_latitude_uplimit
-  #   - data_preprocessing.dropoff_longitude_lowlimit
-  #   - data_preprocessing.dropoff_longitude_uplimit
-  #   # outs: # dvc will track the outs files and folders if it is not tracked by git and dvc add command is not used for it or it's parent folder.
-  #   # - .\data\processed\
+  data_ingestion:
+    cmd: python .\src\data\data_ingestion.py nyc-taxi-trip-duration .\data\raw\
+    deps:
+    - .\src\data\data_ingestion.py
+    params:
+    - data_ingestion.test_split
+    - data_ingestion.seed
+    outs:
+    - .\data\raw\
+
+  data_preprocessing:
+    cmd: python .\src\data\data_preprocessing.py .\data\raw\ .\data\interim\
+    deps:
+    - .\src\data\data_preprocessing.py
+    - .\data\raw\
+    params:
+    - data_preprocessing.pickup_latitude_lowlimit
+    - data_preprocessing.pickup_latitude_uplimit
+    - data_preprocessing.pickup_longitude_lowlimit
+    - data_preprocessing.pickup_longitude_uplimit
+    - data_preprocessing.dropoff_latitude_lowlimit
+    - data_preprocessing.dropoff_latitude_uplimit
+    - data_preprocessing.dropoff_longitude_lowlimit
+    - data_preprocessing.dropoff_longitude_uplimit
+    outs: # dvc will track the outs files and folders if it is not tracked by git and dvc add command is not used for it or it's parent folder.
+    - .\data\interim\
   
   build_features:
-    cmd: python .\src\features\build_features.py .\data\raw\ .\data\processed\
+    cmd: python .\src\features\build_features.py .\data\interim\ .\data\processed\
     deps:
     - .\src\features\build_features.py
-    - .\data\raw\
+    - .\data\interim\
     outs:
     - .\data\processed\
   
@@ -33,8 +40,6 @@ stages:
     - .\src\models\train_model.py
     - .\data\processed\
     params:
-    - train_model.test_seed
-    - train_model.test_size
     - train_model.train_seed
     - train_model.train_size
     - train_model.max_evals
@@ -42,9 +47,18 @@ stages:
     - train_model.target
     outs:
     - .\models\
-  
+
+  # model_evaluation:
+  #   cmd: python .\src\visualization\model_evaluation.py .\models\model.joblib .\data\processed\
+  #   deps:
+  #   - .\src\visualization\model_evaluation.py
+  #   - .\models\
+  #   - .\data\processed\
+  #   metrics:
+  #   - .\reports\metrics.json
+
   visualize:
-    cmd: python .\src\visualization\visualize.py .\models\model.joblib .\data\processed\ .\metrics_output\
+    cmd: python .\src\visualization\visualize.py .\models\model.joblib .\data\processed\ .\reports\figures\
     deps:
     - .\src\visualization\visualize.py
     - .\models\

@@ -1,93 +1,138 @@
-"""
-    It collects data from various sources and save to data/raw folder.
-"""
+# pip install kaggle : To install kaggle library
+# kaggle auth login : To authenticate with Kaggle API
+from kaggle.api.kaggle_api_extended import KaggleApi
 from sklearn.model_selection import train_test_split
-import logging, os, yaml
+import pathlib, yaml, sys, click, random, os, zipfile
 import pandas as pd
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
+from src.logger import logger
 
 
-# logging configure
-logger = logging.getLogger('data_ingestion')
-logger.setLevel('DEBUG')
+logger.info('Fetching Dataset from Kaggle and Splitting into train, test and validation datasets')
 
-console_handler = logging.StreamHandler()
-console_handler.setLevel('DEBUG')
+class TrainTestCreation:
+    """
+        Download Kaggle Competition data, unzip, delete zip files, load the train dataset and split into train,
+        test and validation datasets. Then save the splitted datasets into the specified output folder.
+    """
+    def __init__(self, params) -> None:
+        """Initialize class variables with provided parameters
+        """
+        self.seed = params['seed']
+        self.test_split = params['test_split']
+        self.api = KaggleApi()
+        self.api.authenticate()
 
-file_handler = logging.FileHandler('errors.log')
-file_handler.setLevel('ERROR')
+        logger.info('Call to make_ingestion')
+        
+    def download_data(self, data_path : str, output_path : str) -> None:
+        '''This function reads data from input path and stores it into a dataframe'''
+        try:
+            competition_name = data_path
+            extract_path = output_path
+            self.api.competition_download_files(competition_name, path=extract_path)
+        except Exception as e:
+            logger.error('Downloading dataset failed')
+            raise e
+        else:
+            logger.info('Downloading dataset performed successfully')
 
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-console_handler.setFormatter(formatter)
-file_handler.setFormatter(formatter)
+    def unzip_data(self, competition_name : str, data_path : str) -> None:
+        '''This function reads data from input path and stores it into a dataframe'''
+        try:
+            with zipfile.ZipFile(os.path.join(data_path, f'{competition_name}.zip'), 'r') as zip_ref:
+                zip_ref.extractall(data_path)
 
-logger.addHandler(console_handler)
-logger.addHandler(file_handler)
+            with zipfile.ZipFile(os.path.join(data_path, 'train.zip'), 'r') as zip_ref:
+                zip_ref.extractall(data_path)
+                
+            with zipfile.ZipFile(os.path.join(data_path, 'test.zip'), 'r') as zip_ref:
+                zip_ref.extractall(data_path)
+        except Exception as e:
+            logger.error('File extraction failed')
+            raise e
+        else:
+            logger.info('File extraction performed successfully')
 
-def load_params(params_path: str) -> float:
-    try:
-        with open(params_path, 'r') as file:
-            params = yaml.safe_load(file)
-        test_size = params['data_ingestion']['test_size']
-        logger.debug('test size retrieved')
-        return test_size
-    except FileNotFoundError:
-        logger.error('File not found')
-        raise
-    except yaml.YAMLError as e:
-        logger.error('yaml error')
-        raise
-    except Exception as e:
-        logger.error('some error occured')
-        raise
+    def clean_zip_data(self, data_path : str) -> None:
+        '''This function reads data from input path and stores it into a dataframe'''
+        try:
 
-def load_data(data_url: str) -> pd.DataFrame:
-    try:
-        df = pd.read_csv(data_url)
-        return df
-    except pd.errors.ParserError as e:
-        print(f"Error: Failed to parse the CSV file from {data_url}.")
-        print(e)
-        raise
-    except Exception as e:
-        print(f"Error: An unexpected error occurred while loading the data.")
-        print(e)
-        raise
+            for file in os.listdir(data_path):
+                if file.endswith('.zip'):
+                    os.remove(os.path.join(data_path, file))
 
-def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
-    try:
-        df.drop(columns=['tweet_id'], inplace=True)
-        final_df = df[df['sentiment'].isin(['happiness', 'sadness'])]
-        final_df['sentiment'].replace({'happiness': 1, 'sadness': 0}, inplace=True)
-        return final_df
-    except KeyError as e:
-        print(f"Error: Missing column {e} in the dataframe.")
-        raise
-    except Exception as e:
-        print(f"Error: An unexpected error occurred during preprocessing.")
-        print(e)
-        raise
+        except Exception as e:
+            logger.error('Removing zip files failed')
+            raise e
+        else:
+            logger.info('Zip file removed successfully')
 
-def save_data(train_data: pd.DataFrame, test_data: pd.DataFrame, data_path: str) -> None:
-    try:
-        data_path = os.path.join(data_path, 'raw')
-        os.makedirs(data_path, exist_ok=True)
-        train_data.to_csv(os.path.join(data_path, "train.csv"), index=False)
-        test_data.to_csv(os.path.join(data_path, "test.csv"), index=False)
-    except Exception as e:
-        print(f"Error: An unexpected error occurred while saving the data.")
-        print(e)
-        raise
+    def load_data(self, data_path : str) -> None:
+        '''This function reads data from input path and stores it into a dataframe'''
+        try:
+            self.df = pd.read_csv(os.path.join(data_path, 'train.csv'))
+        except Exception as e:
+            logger.error('Loading data failed')
+            raise e
+        else:
+            logger.info('Data loaded successfully')
 
-def main():
-    try:
-        test_size = load_params(params_path='params1.yaml')
-        df = load_data(data_url='https://raw.githubusercontent.com/campusx-official/jupyter-masterclass/main/tweet_emotions.csv')
-        final_df = preprocess_data(df)
-        train_data, test_data = train_test_split(final_df, test_size=test_size, random_state=42)
-        save_data(train_data, test_data, data_path='data')
-    except Exception as e:
-        print(f"Error: {e}")
-        print("Failed to complete the data ingestion process.")
+    def split_data(self) -> None:
+        '''This function splits the whole data into train test as per the test percent provided'''
+        try:
+            self.train, self.test = train_test_split(self.df, test_size=self.test_split, random_state=self.seed)
+
+            idx_list = list(self.test.index)
+            test_idx = random.sample(idx_list, len(idx_list)//2)
+            val_idx = list(set(idx_list)- set(test_idx))
+
+            self.validate = self.test.loc[val_idx]
+            self.test = self.test.loc[test_idx]
+        except Exception as e:
+            logger.error('Data split failed')
+            raise e
+        else:
+            logger.info('Data splitted successfully')
+
+    def save_data(self, output_path : str) -> None:
+        '''This function writes the data into specified destination folder'''
+        try:
+            pd.read_csv(output_path + '/test.csv').to_csv(output_path + '/test_kaggle.csv', index=False)
+            self.train.to_csv(output_path + '/train.csv', index=False)
+            self.test.to_csv(output_path + '/test.csv', index=False)
+            self.validate.to_csv(output_path + '/validate.csv', index=False)
+        except Exception as e:
+            logger.error('Dataset saving failed')
+            raise e
+        else:
+            logger.info('Dataset saved successfully')
+
+    def fit(self, data_path_str : str, output_path_str : str) -> None:
+
+        self.download_data(data_path_str, output_path_str)
+        self.unzip_data(data_path_str, output_path_str)
+        self.clean_zip_data(output_path_str)
+        self.load_data(output_path_str)
+        self.split_data()
+        self.save_data(output_path_str)
+
+# @click.command() # to turn a function into a CLI tool
+# @click.argument('input_filepath', type=click.Path())
+# @click.argument('output_filepath', type=click.Path())
+def main() -> None:
+    curr_dir = pathlib.Path(__file__)
+    home_dir = curr_dir.parent.parent.parent
+    params_file = home_dir.as_posix() + '/params.yaml'
+    params = yaml.safe_load(open(params_file))["data_ingestion"]
+
+    data_path = sys.argv[1]
+    output_path = home_dir / sys.argv[2]
+    output_path_str = output_path.as_posix()
+    pathlib.Path(output_path_str).mkdir(parents=True, exist_ok=True)
+
+    split_data = TrainTestCreation(params)
+    split_data.fit(data_path, output_path_str)
 
 if __name__ == '__main__':
     main()

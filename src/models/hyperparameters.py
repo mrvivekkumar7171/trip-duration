@@ -1,4 +1,7 @@
 from hyperopt import hp
+import pathlib, sys
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
+from src.logger import logger
 
 SEARCH_SPACES = {
     'LinearRegression':
@@ -46,6 +49,61 @@ SEARCH_SPACES = {
         "max_depth": hp.choice("max_depth", [6, 8, 10]),
         "learning_rate": hp.uniform("learning_rate", 0.03, 0.3),
     },
+    'LogisticRegression': 
+    {
+        'C': hp.loguniform('C', -5, 2),
+        'penalty': hp.choice('penalty', ['l1', 'l2']),
+        'solver': hp.choice('solver', ['liblinear', 'saga'])
+    },
+    'AdaBoostClassifier': 
+    {
+        'n_estimators': hp.choice('n_estimators', [50, 100, 200]),
+        'learning_rate': hp.uniform('learning_rate', 0.01, 1.0)
+    },
+    'KNeighborsClassifier': 
+    {
+        'n_neighbors': hp.choice('n_neighbors', [3, 5, 7, 11]),
+        'weights': hp.choice('weights', ['uniform', 'distance']),
+        'metric': hp.choice('metric', ['euclidean', 'manhattan'])
+    },
+    'BaggingClassifier': 
+    {
+        'n_estimators': hp.choice('n_estimators', [10, 50, 100]),
+        'max_samples': hp.uniform('max_samples', 0.5, 1.0)
+    },
+    'BernoulliNB': 
+    {
+        'alpha': hp.uniform('alpha', 0.1, 2.0)
+    },
+    'LGBMRegressor': 
+    {
+        'num_leaves': hp.choice('num_leaves', [31, 62, 127]),
+        'learning_rate': hp.loguniform('learning_rate', -5, -1),
+        'n_estimators': hp.choice('n_estimators', [100, 200, 500])
+    },
+    'ElasticNet': 
+    {
+        'alpha': hp.loguniform('alpha', -5, 2),
+        'l1_ratio': hp.uniform('l1_ratio', 0, 1)
+    },
+    'Lasso': 
+    {
+        'alpha': hp.loguniform('alpha', -5, 2)
+    },
+    'Ridge': 
+    {
+        'alpha': hp.loguniform('alpha', -5, 2)
+    },
+    'KNeighborsRegressor': 
+    {
+        'n_neighbors': hp.choice('n_neighbors', [3, 5, 7, 11]),
+        'weights': hp.choice('weights', ['uniform', 'distance'])
+    },
+    'BayesianRidge': 
+    {
+        'alpha_1': hp.loguniform('alpha_1', -7, -5),
+        'lambda_1': hp.loguniform('lambda_1', -7, -5)
+    },
     'RandomForestClassifier':
     {
         'n_estimators': hp.choice('n_estimators', [50, 100, 150, 200]),
@@ -70,7 +128,8 @@ SEARCH_SPACES = {
         'max_depth': hp.choice('max_depth', [3, 5, 10])
     }
 }
-def get_search_space(model_name):
+
+def get_search_space(model_name : str) -> dict:
     """
     Looks up the search space dictionary. 
     Returns an empty dictionary {} if the model is not found.
@@ -78,5 +137,5 @@ def get_search_space(model_name):
     return SEARCH_SPACES.get(model_name, {})
 
 if __name__ == '__main__':
-    print(get_search_space('RandomForestRegressor'))
-    print(get_search_space('UnknownModel'))
+    logger.info(get_search_space('RandomForestRegressor'))
+    logger.info(get_search_space('UnknownModel'))
