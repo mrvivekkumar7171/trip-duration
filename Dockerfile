@@ -11,6 +11,11 @@ ENV PYTHONDONTWRITEBYTECODE=1\
 # Set the working directory to /app
 WORKDIR /app
 
+# Install Linux system dependencies required by LightGBM
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
 # Download dependencies as a separate step to take advantage of Docker's caching.
 # Leverage a cache mount to /root/.cache/pip to speed up subsequent builds.
 # Leverage a bind mount to requirements.txt to avoid having to copy them into into this layer.

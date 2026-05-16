@@ -5,6 +5,8 @@ fastapi
 joblib
 scikit-learn==1.7.2 # This is needed by joblib to read and load the model
 pandas
+lightgbm
+numpy
 
 # Built-in Libraries
 pydantic
