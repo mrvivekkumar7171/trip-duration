@@ -8,14 +8,18 @@
     only once after getting 5 best model on 1st test dataset. Also, use recall and accuracy as metrics for 1st
     test dataset, but for 2nd and 3rd test dataset use only roc as metric.
 """
+# Temporarily hide MLflow from Python's import system so that LazyPredict will fail to find MLflow and disable tracking gracefully.
+# Restore MLflow so the rest of your script can use it normally
+import sys
+sys.modules['mlflow'] = None
 from lazypredict.Supervised import LazyClassifier, LazyRegressor, CLASSIFIERS, REGRESSORS
+del sys.modules['mlflow']
+
+import pathlib, sys, joblib, mlflow, warnings, yaml, mlflow.sklearn, mlflow.catboost, mlflow.xgboost, mlflow.lightgbm
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import mean_squared_error, accuracy_score
 from hyperopt import fmin, tpe, Trials, STATUS_OK, space_eval
-import pathlib, sys, joblib, mlflow, warnings, yaml
-
 from hyperparameters import get_search_space
-import mlflow.sklearn
 import pandas as pd
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
@@ -53,8 +57,20 @@ def find_best_model_with_params(X_train : pd.DataFrame, y_train : pd.Series, X_t
                 mlflow.log_metric('Accuracy', accuracy_score(y_test, y_pred))
             else:
                 mlflow.log_metric('RMSE', mean_squared_error(y_test, y_pred) ** 0.5)
-                
-            mlflow.sklearn.log_model(model, 'model')
+
+            # To log the model in mlflow
+            if 'XGB' in best_model_name:
+                mlflow.xgboost.log_model(model, 'model')
+            elif 'LGBM' in best_model_name:
+                mlflow.lightgbm.log_model(model, 'model')
+            elif 'CatBoost' in best_model_name:
+                mlflow.catboost.log_model(model, 'model')
+            else: # Fallback for RandomForest, Ridge, SVC, LogisticRegression, etc.
+                mlflow.sklearn.log_model(model, 'model')
+            
+            mlflow.set_tag("model_type", best_model_name) # To log the model type as tag in mlflow
+            mlflow.set_tag("author", "Vivek Kumar")
+            mlflow.set_tag("target_type", "classification" if is_classification else "regression")
             
         return model
         
@@ -79,7 +95,7 @@ def find_best_model_with_params(X_train : pd.DataFrame, y_train : pd.Series, X_t
                 
             return {'loss': loss, 'status': STATUS_OK}
 
-        with mlflow.start_run(run_name=f'{best_model_name}_Tuning'):
+        with mlflow.start_run(run_name=f'{best_model_name}_Tuning', nested=True):
             argmin = fmin(
                 fn=objective,
                 space=space,
@@ -112,7 +128,9 @@ def find_best_model_with_params(X_train : pd.DataFrame, y_train : pd.Series, X_t
         return model
 
 def save_model(model : object, output_path : str) -> None:
-    # Save the trained model to the specified output path
+    """
+        Save the trained model to the specified output path
+    """
     joblib.dump(model, output_path + "/model.joblib")
 
 def main() -> None:
@@ -127,7 +145,11 @@ def main() -> None:
     output_path_str = output_path.as_posix()
     pathlib.Path(output_path_str).mkdir(parents=True, exist_ok=True)
 
-    mlflow.set_experiment("Experiment_Trip_Duration_Prediction")
+    # mlflow.autolog(disable=True) # Disable autologging to have more control over what gets logged in mlflow and when.
+    # mlflow.sklearn.autolog(disable=True) # same can be done for specific library like xgboost, xgboost, statsmodels, lightgbm etc.
+
+    mlflow.set_tracking_uri("http://34.131.126.24:5000/")
+    mlflow.set_experiment("Trip_Duration_Prediction")
     TARGET = params['target']
 
     train_features = pd.read_csv(data_path_str + "/train_processed.csv")

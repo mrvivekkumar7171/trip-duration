@@ -56,11 +56,12 @@ stages:
   #   - .\data\processed\
   #   metrics:
   #   - .\reports\metrics.json
-
+# dought: where to store metrics.json from model_evaluation.py and reports\figures i.e. image from visualize.py
   visualize:
     cmd: python .\src\visualization\visualize.py .\models\model.joblib .\data\processed\ .\reports\figures\
     deps:
     - .\src\visualization\visualize.py
+    - .\data\processed\
     - .\models\
     params:
     - visualize.classification

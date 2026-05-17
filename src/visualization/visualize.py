@@ -1,7 +1,8 @@
 from sklearn.model_selection import train_test_split
 import sys, pathlib, joblib, mlflow, yaml
 import matplotlib.pyplot as plt
-from sklearn.metrics import precision_score, recall_score, roc_auc_score, accuracy_score, mean_squared_error, r2_score, average_precision_score, ConfusionMatrixDisplay
+import seaborn as sns
+from sklearn.metrics import precision_score, recall_score, roc_auc_score, accuracy_score, mean_squared_error, r2_score, average_precision_score, ConfusionMatrixDisplay, confusion_matrix
 import pandas as pd
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
@@ -23,6 +24,7 @@ def save_importance_plot(model : object, feature_names : list, output_dir : str)
     plot_path = output_dir / "feature_importance.png"
     fig.savefig(plot_path, bbox_inches='tight')
     mlflow.log_artifact(plot_path.as_posix())
+    mlflow.log_artifact(__file__) # To log the source code to the mlflow
 
 def main() -> None:
 
@@ -38,7 +40,12 @@ def main() -> None:
     output_dir = pathlib.Path(sys.argv[3])
     output_dir.mkdir(exist_ok=True)
 
-    mlflow.set_experiment("Experiment_Trip_Duration_Prediction")
+    mlflow.set_tracking_uri("http://34.131.126.24:5000/")
+    mlflow.set_experiment("Trip_Duration_Prediction")
+
+    mlflow.autolog(disable=True)
+    mlflow.sklearn.autolog(disable=True)
+
     TARGET = params['target']
 
     model = joblib.load(model_file)
@@ -71,7 +78,17 @@ def main() -> None:
             cm_path = output_dir / "confusion_matrix.png"
             fig.savefig(cm_path, bbox_inches='tight')
             mlflow.log_artifact(cm_path.as_posix())
-            
+
+            # cm = confusion_matrix(y_test, y_pred)
+            # plt.figure(figsize=(6, 6))
+            # sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=['Predicted 0', 'Predicted 1'], yticklabels=['Actual 0', 'Actual 1'])
+            # plt.ylabel('Actual')
+            # plt.xlabel('Predicted')
+            # plt.title('Confusion Matrix Heatmap')
+            # cm_path = output_dir / "confusion_matrix_heatmap.png"
+            # plt.savefig(cm_path, bbox_inches='tight')
+            # mlflow.log_artifact(cm_path.as_posix())
+
         else:
             rmse = mean_squared_error(y_test, y_pred) ** 0.5
             r2 = r2_score(y_test, y_pred)

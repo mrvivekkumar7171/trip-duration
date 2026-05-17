@@ -94,6 +94,7 @@ target/
 /mlruns
 /dvclive
 mlflow.db
+/mlartifacts
 /metrics_output
 /logs
 
