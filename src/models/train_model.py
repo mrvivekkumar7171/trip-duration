@@ -15,17 +15,14 @@ sys.modules['mlflow'] = None
 from lazypredict.Supervised import LazyClassifier, LazyRegressor, CLASSIFIERS, REGRESSORS
 del sys.modules['mlflow']
 
-import pathlib, sys, joblib, mlflow, warnings, yaml, mlflow.sklearn, mlflow.catboost, mlflow.xgboost, mlflow.lightgbm
+import pathlib, sys, joblib, mlflow, yaml, mlflow.sklearn, mlflow.catboost, mlflow.xgboost, optuna, mlflow.lightgbm
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import mean_squared_error, accuracy_score
-from hyperopt import fmin, tpe, Trials, STATUS_OK, space_eval
-from hyperparameters import get_search_space
+from hyperparameters import get_search_space, SEARCH_SPACES
 import pandas as pd
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
 from src.logger import logger
-
-warnings.filterwarnings('ignore')
 
 def find_best_model_with_params(X_train : pd.DataFrame, y_train : pd.Series, X_tune : pd.DataFrame, y_tune : pd.Series, X_test : pd.DataFrame, y_test : pd.Series, is_classification : bool, max_evals : int) -> object:
     """Find Best Model with LazyPredict and then tune it with Hyperopt"""
@@ -43,9 +40,7 @@ def find_best_model_with_params(X_train : pd.DataFrame, y_train : pd.Series, X_t
     BestModelClass = model_dict[best_model_name]
     logger.info(f"Top 3 Models:\n{models.head(3)}")
 
-    space = get_search_space(best_model_name)
-
-    if not space:
+    if best_model_name not in SEARCH_SPACES:
         logger.info(f"No search space defined for {best_model_name}. Training with default parameters.")
         
         with mlflow.start_run(run_name=f'{best_model_name} Final Model'):
@@ -75,46 +70,49 @@ def find_best_model_with_params(X_train : pd.DataFrame, y_train : pd.Series, X_t
         return model
         
     else:
-        logger.info(f"Starting Hyperopt tuning for {best_model_name}")
+        logger.info(f"Starting Optuna tuning for {best_model_name}")
 
-        def objective(params_in : dict) -> dict:
-            """Objective function for Hyperopt to minimize the loss metric"""
+        def objective(trial) -> float:
+            """Objective function for Optuna to minimize the loss metric"""
+            # 1. Fetch parameters dynamically using the trial object
+            params_in = get_search_space(trial, best_model_name)
+            
             if 'max_depth' in params_in and params_in['max_depth'] is not None: params_in['max_depth']=int(params_in['max_depth'])
             if 'min_child_weight' in params_in: params_in['min_child_weight']=int(params_in['min_child_weight']) 
             if 'max_delta_step' in params_in: params_in['max_delta_step']=int(params_in['max_delta_step'])
 
-            model = BestModelClass(**params_in)
-            
-            # Use cross-validation to evaluate the parameters
-            if is_classification:
-                score = cross_val_score(model, X_tune, y_tune, cv=5, scoring='accuracy').mean()
-                loss = 1 - score # Minimize error (1 - accuracy)
-            else:
-                score = cross_val_score(model, X_tune, y_tune, cv=5, scoring='neg_mean_squared_error').mean()
-                loss = -score 
+            with mlflow.start_run(run_name=f'{best_model_name}_Tuning', nested=True):
+                model = BestModelClass(**params_in, random_state=42)
                 
-            return {'loss': loss, 'status': STATUS_OK}
+                # Use cross-validation to evaluate the parameters
+                if is_classification:
+                    score = cross_val_score(model, X_tune, y_tune, cv=5, scoring='accuracy').mean()
+                    loss = 1.0 - score # Minimize error (1 - accuracy)
+                else:
+                    score = cross_val_score(model, X_tune, y_tune, cv=5, scoring='neg_mean_squared_error').mean()
+                    loss = -score 
+                    
+                # 2. Return ONLY the float value (loss)
+                return loss
 
         with mlflow.start_run(run_name=f'{best_model_name}_Tuning', nested=True):
-            argmin = fmin(
-                fn=objective,
-                space=space,
-                algo=tpe.suggest,
-                max_evals=max_evals,
-                trials=Trials(),
-                verbose=True
-            )
+            # 3. Create the study and run optimization
+            study = optuna.create_study(direction="minimize")
+            study.optimize(objective, n_trials=max_evals)
 
         with mlflow.start_run(run_name=f'{best_model_name} Final Model') as run:
-            # configure params
-            params = space_eval(space, argmin) 
+            # 4. Retrieve best parameters directly from the study object
+            params = study.best_params 
+            
             if 'max_depth' in params and params['max_depth'] is not None: params['max_depth']=int(params['max_depth'])       
             if 'min_child_weight' in params: params['min_child_weight']=int(params['min_child_weight'])
             if 'max_delta_step' in params: params['max_delta_step']=int(params['max_delta_step'])  
-            mlflow.log_params(params)
+            
+            mlflow.log_params({f"best_{k}": v for k, v in study.best_params.items()})
+            mlflow.log_metric("best_loss", study.best_value)
 
             # Train final model on the full training set using best parameters
-            model = BestModelClass(**params)
+            model = BestModelClass(**params, random_state=42)
             model.fit(X_train, y_train)
             y_pred = model.predict(X_test)
             
@@ -123,7 +121,14 @@ def find_best_model_with_params(X_train : pd.DataFrame, y_train : pd.Series, X_t
             else:
                 mlflow.log_metric('RMSE', mean_squared_error(y_test, y_pred) ** 0.5)
                 
-            mlflow.sklearn.log_model(model, 'model')
+            if 'XGB' in best_model_name:
+                mlflow.xgboost.log_model(model, 'model')
+            elif 'LGBM' in best_model_name:
+                mlflow.lightgbm.log_model(model, 'model')
+            elif 'CatBoost' in best_model_name:
+                mlflow.catboost.log_model(model, 'model')
+            else:
+                mlflow.sklearn.log_model(model, 'model')
             
         return model
 

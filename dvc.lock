@@ -5,7 +5,7 @@ stages:
     deps:
     - path: .\data\interim\
       hash: md5
-      md5: c3a13b4abe33cd189d6786b33196d229.dir
+      md5: 6d2ff3caa5f69e5842802e0134b0def8.dir
       size: 193882921
       nfiles: 3
     - path: .\src\features\build_features.py
@@ -15,7 +15,7 @@ stages:
     outs:
     - path: .\data\processed\
       hash: md5
-      md5: f3d09463a15233eee659b57df775ff33.dir
+      md5: 44e1648cc88b3c6a740d0b74b87b6901.dir
       size: 232883386
       nfiles: 3
   train_model:
@@ -23,13 +23,13 @@ stages:
     deps:
     - path: .\data\processed\
       hash: md5
-      md5: f3d09463a15233eee659b57df775ff33.dir
+      md5: 44e1648cc88b3c6a740d0b74b87b6901.dir
       size: 232883386
       nfiles: 3
     - path: .\src\models\train_model.py
       hash: md5
-      md5: 3f0bb694171628a0d5b318874e4e743e
-      size: 8220
+      md5: 996c5811996db12c8549cb0218a3107a
+      size: 8884
     params:
       params.yaml:
         train_model.classification: false
@@ -40,8 +40,8 @@ stages:
     outs:
     - path: .\models\
       hash: md5
-      md5: 3497eecd1c97a545fabd78c39751eef8.dir
-      size: 5993961
+      md5: 49b7b53c6190fbf5f8ae3af414ce3894.dir
+      size: 1558154
       nfiles: 1
   push_model:
     cmd: python .\src\models\push_model.py .\models\model.joblib models/model.joblib
@@ -49,8 +49,8 @@ stages:
     deps:
     - path: .\models\
       hash: md5
-      md5: 3497eecd1c97a545fabd78c39751eef8.dir
-      size: 5993961
+      md5: 49b7b53c6190fbf5f8ae3af414ce3894.dir
+      size: 1558154
       nfiles: 1
     - path: .\src\models\push_model.py
       hash: md5
@@ -62,13 +62,13 @@ stages:
     deps:
     - path: .\data\processed\
       hash: md5
-      md5: f3d09463a15233eee659b57df775ff33.dir
+      md5: 44e1648cc88b3c6a740d0b74b87b6901.dir
       size: 232883386
       nfiles: 3
     - path: .\models\
       hash: md5
-      md5: 3497eecd1c97a545fabd78c39751eef8.dir
-      size: 5993961
+      md5: 49b7b53c6190fbf5f8ae3af414ce3894.dir
+      size: 1558154
       nfiles: 1
     - path: .\src\visualization\visualize.py
       hash: md5
@@ -92,7 +92,7 @@ stages:
     outs:
     - path: .\data\raw\
       hash: md5
-      md5: e38f84b45322d1b21472436f8c0ed913.dir
+      md5: 3811b6f0ece5105a34453c218aae88f7.dir
       size: 266262150
       nfiles: 4
   data_preprocessing:
@@ -100,7 +100,7 @@ stages:
     deps:
     - path: .\data\raw\
       hash: md5
-      md5: e38f84b45322d1b21472436f8c0ed913.dir
+      md5: 3811b6f0ece5105a34453c218aae88f7.dir
       size: 266262150
       nfiles: 4
     - path: .\src\data\data_preprocessing.py
@@ -120,6 +120,6 @@ stages:
     outs:
     - path: .\data\interim\
       hash: md5
-      md5: c3a13b4abe33cd189d6786b33196d229.dir
+      md5: 6d2ff3caa5f69e5842802e0134b0def8.dir
       size: 193882921
       nfiles: 3
